@@ -106,9 +106,16 @@ def compare(nrm, dec):
             L.append(f"| {lab} | {t[a].corr(t[b]):+.3f} | "
                      f"{t[a].corr(t[b], method='spearman'):+.3f} |")
     same = (t.nrm_shift == t.dec_shift).mean()
+    nn = (t.nrm_shift == "neutral").mean()
+    dn = (t.dec_shift == "neutral").mean()
+    ratio = (t.decile / t.dtvd).median()
     L += ["", f"Both methods name the same response category as the largest shift in "
               f"**{same:.0%}** of the {len(t)} cells "
               f"(chance with six categories is 17%).",
+          "", f"The decile approximation is larger: median ratio "
+              f"decile TVD / NRM dTVD = **{ratio:.2f}**. It also concentrates on the "
+              f"modal response — it names `neutral` as the shifted category in "
+              f"**{dn:.0%}** of cells against the NRM's **{nn:.0%}**.",
           "", "| grouping | item | NRM dTVD | decile TVD | NRM says | decile says |",
           "|---|---|---|---|---|---|"]
     for _, r in t.sort_values("dtvd", ascending=False).head(8).iterrows():
