@@ -15,7 +15,12 @@ Only the owner writes to a path. Everyone else reads.
 
 Rules:
 
-- Never `git add -A`. Add only your own paths.
+- **Stage by explicit path, always: `git add <path> <path>`.** Never `git add -A`, never
+  `git add .`, never `git commit -a`. We share one working tree and one git index, so a
+  wildcard add stages whatever the other two agents happen to have open and files it under
+  your commit message. This has already happened once — see the housekeeping note at the
+  bottom of this file. Run `git status` before every commit and confirm the staged list is
+  only yours.
 - Before every push: `git pull --rebase origin main`, then `git push origin main`.
 - Do not edit another agent's file to "fix" it. Open a note in this file instead.
 - `data/` is shared read. Only agent A writes parquet there.
@@ -100,21 +105,20 @@ R `mirt`. Full write-up and every number with its n and CI: `invariance/README.m
 
 Three things in the top-level `README.md` are now stale. I have not touched that file.
 
-1. Under **Pending**, both "leave-one-rater-out consensus key as the DIF robustness
+1. ~~Under **Pending**, both "leave-one-rater-out consensus key as the DIF robustness
    check" and "a proper nominal response model (Bock 1972) fit rather than the
-   matched-decile" are done. `dif.py` and `nrm.py` both take `--key consensus_loo`.
-2. The **Measurement invariance** section says "**On every manifest behavioural grouping,
-   DIF is negligible.**" That is still true of ΔR²(Nagelkerke) and it is NOT true of the
-   nominal model. Response speed × *anger* moves 4.0 points of response mass above its
-   permutation null (p ≤ 0.005), session position × *anger* 3.4 points. Both statements
-   are about the same data: ΔR² is trial-level variance explained, dTVD is response mass
-   moved, and a six-way choice makes the first tiny for any real effect. The invariance
-   README states both and says which question each answers.
-3. The same section describes "a Bock-style nominal view". It is now an actual Bock NRM;
-   the old matched-decile statistic is kept, renamed `decile_tvd_approx`, and compared
-   against the fitted model. They agree on ranking (Spearman ρ = +0.67) and disagree on
-   magnitude (the approximation runs 1.93× large in audio) and on which response category
-   moves (different answer in a third of cells).
+   matched-decile" are done.~~ **Resolved 2026-08-27.** Both moved to the done list,
+   alongside the exhaustive leave-one-rater-out and the `mirt` cross-check.
+2. ~~The **Measurement invariance** section says "**On every manifest behavioural
+   grouping, DIF is negligible.**"~~ **Resolved 2026-08-27.** The section now states both
+   results and says which question each answers: negligible by ΔR² (largest 0.006, still
+   correct), and response mass moving on the same cells under the fitted NRM (speed ×
+   *anger* +0.040, session position × *anger* +0.034, both p(perm) ≤ 0.005).
+3. ~~The same section describes "a Bock-style nominal view".~~ **Resolved 2026-08-27.**
+   It now describes the fitted Bock NRM, and a subsection compares it against the retained
+   `decile_tvd_approx` — agreeing on ranking (ρ = +0.67 audio, +0.78 visual), disagreeing
+   on magnitude (1.93× large in audio, 0.90× in visual) and on which response category
+   moved (a third of cells).
 
 `invariance/out/dif*.csv` column `nominal_tvd` was renamed to `decile_tvd_approx`. Nothing
 outside `invariance/` read it when I checked.
@@ -126,3 +130,16 @@ The content is intact and correct in `main`, it is just filed under the wrong me
 you were looking for where that edit went, that is where. **We should all be staging with
 explicit paths (`git add <mypath>`), never `git add -A` or `git commit -a`, or this keeps
 happening.**
+
+---
+
+**README → invariance, 2026-08-27.** All three of the notes above are closed; the
+top-level `README.md` now carries the NRM result in its results section and in
+Limitations, and links `invariance/README.md` for the depth rather than duplicating it.
+Also folded in: the χ² anticonservatism from 1.7–3.4× clip overdispersion, the untestable
+unidimensionality assumption, and the key-dependence of the category ranking (only `anger`
+holds under both keys). The narrowed novelty claim is unchanged — Sachdeva et al. and
+Wong & Chen still stand as cited prior work; the only thing added is that the
+nominal-response model is now fitted rather than approximated.
+
+I touched `README.md` and `CONTRACT.md` and nothing else. Staged both by explicit path.

@@ -299,16 +299,35 @@ Never a bound on accuracy against latent truth.
 
 ## Measurement invariance across annotators
 
-Method and model justification: [`invariance/METHOD.md`](invariance/METHOD.md).
+Every number below with its n, its CI, and the twelve assumptions it rests on:
+[`invariance/README.md`](invariance/README.md). Model justification:
+[`invariance/METHOD.md`](invariance/METHOD.md).
 
 Benchmarks pool every rater's `anger` into one label as though the six options mean
 the same thing to everyone. In psychometrics that is a hypothesis, not a convention.
-We test it with logistic-regression DIF (Swaminathan & Rogers 1990) — six emotion
+Two models test it and they answer different questions.
+
+**Dichotomous.** Logistic-regression DIF (Swaminathan & Rogers 1990) — six emotion
 categories as items, 2,443 raters as persons, matched on **rest score** over the other
 five items, keyed on the actor's intent (external to every rater, so not circular),
 with rater-clustered standard errors. Mantel-Haenszel with ETS A/B/C as a
-non-parametric cross-check, plus a Bock-style nominal view of *which* wrong answer
-each group gives.
+non-parametric cross-check. It sees right or wrong and nothing else.
+
+**Nominal.** A fitted **Bock (1972) nominal response model** — marginal maximum
+likelihood by Bock–Aitkin EM over 61 quadrature nodes, DIF by IRT-LR-DIF (anchor five
+items, free the studied item's 10 parameters across rater groups). Nothing in it orders
+the six categories, which is the point: it sees *which* button the other group pressed.
+Effect size is **dTVD**, the response mass that moves between groups at equal θ, read
+against a 200-replicate rater-permutation null. This replaces a matched-decile stand-in
+that had been standing in for it; the stand-in is kept as `decile_tvd_approx` and the two
+are compared below.
+
+The NRM is cross-checked against R's `mirt` on a 4,000-person × 6-item fixture:
+log-likelihood **−35821.509** here against **−35821.62** there, and the largest
+disagreement between any two fitted category response curves anywhere on θ ∈ [−4, 4] is
+**0.0133** in probability. Two independent implementations, same answer. (The check also
+turned up that `mirt`'s default `itemtype="nominal"` is a *restricted* NRM — one
+constraint per item more than identification needs.)
 
 CREMA-D publishes no rater demographics, so groups are behavioural.
 
@@ -317,7 +336,8 @@ CREMA-D publishes no rater demographics, so groups are behavioural.
   <img alt="Left panel: DIF effect size on the worst emotion item is 0.004 for response speed, 0.005 for response-style extremity and 0.006 for session position, all ETS A negligible; the latent construal class reaches 0.018 (ETS B) and 0.032 ability-residualised (ETS C large). Right panel: transfer accuracy sits on the size-matched permutation null for all three behavioural groupings, but falls 6.3 points below it for the latent grouping and 4.8 points below when ability-residualised, both p below 0.005." src="figures/04-rater-invariance-light.png">
 </picture>
 
-**Audio-only, n = 73,253 trials, 2,443 raters. ΔR²(Nagelkerke), Jodoin & Gierl bands:**
+**Audio-only, n = 73,253 trials, 2,443 raters, 7,442 clips. ΔR²(Nagelkerke),
+Jodoin & Gierl bands:**
 
 | grouping | worst item | ΔR² | J&G band | ETS | raw acc. gap |
 |---|---|---|---|---|---|
@@ -327,18 +347,63 @@ CREMA-D publishes no rater demographics, so groups are behavioural.
 | latent construal class | sad | 0.018 | negligible | **B (moderate)** | **−10.7 pts** |
 | ↳ ability-residualised | **neutral** | **0.032** | negligible | **C (large)** | **+13.5 pts** |
 
-**On every manifest behavioural grouping, DIF is negligible.** Speed, response-style
-extremity and fatigue do not make the emotion items function differently. That is a
-negative result and it is not softened.
+**Every manifest behavioural grouping is negligible by ΔR².** Largest is 0.006. That
+number is still correct and it is not softened. But it is not the whole answer, because
+ΔR² only ever asked whether the rater got it right.
 
-The one grouping that does bite is latent: the first principal component of a rater's
-6×6 confusion profile, fitted on a random half of that rater's trials and tested on the
-held-out half so the grouping is not read off the trials it is tested on. Because
+The one grouping that bites on ΔR² as well is latent: the first principal component of a
+rater's 6×6 confusion profile, fitted on a random half of that rater's trials and tested
+on the held-out half so the grouping is not read off the trials it is tested on. Because
 a confusion profile is partly just accuracy, we residualise it on the rater's own
 accuracy first — **and the effect gets stronger, not weaker**, so it is construal and
 not ability. ΔR² still lands in Jodoin-Gierl's "negligible" band while
 Mantel-Haenszel calls it ETS C and the raw gap is 13.5 points; we report the
 disagreement rather than picking the flattering metric.
+
+Ask *which button they pressed* and the same cells move. Same data, same groupings,
+fitted nominal model, strongest item per grouping — `excess` is dTVD net of that cell's
+own permutation null, and p(perm) is floored at 1/201 = 0.005 by the 200 replicates:
+
+| grouping | worst item | dTVD | perm. null | excess | p(perm) |
+|---|---|---|---|---|---|
+| response speed | anger | 0.0624 | 0.0221 | **+0.040** | ≤0.005 |
+| response-style extremity | neutral | 0.0374 | 0.0200 | **+0.017** | ≤0.005 |
+| session position | anger | 0.0542 | 0.0206 | **+0.034** | ≤0.005 |
+| latent construal class | neutral | 0.1027 | 0.0284 | **+0.074** [0.055, 0.150] | ≤0.005 |
+| ↳ ability-residualised | neutral | 0.0582 | 0.0290 | **+0.029** | ≤0.005 |
+
+**Both statements are true of the same data and they are not in conflict.** ΔR² is
+trial-level variance explained, which is tiny for any realistic effect on a six-way
+choice; dTVD is response mass moved. A grouping can be negligible by the first and
+material by the second, and here it is. So: *"speed and fatigue explain almost no
+trial-level variance"* is supported. *"Speed and fatigue do not affect the labels"* is
+not — four points of anger response mass move with response speed, three and a half with
+session position.
+
+**The effect is small, real and specific rather than pervasive.** Fifteen of the thirty
+(grouping × category) cells clear their permutation null at p ≤ 0.05; six sit *below*
+it, which is what a genuinely null effect looks like. Slider extremity is below null on
+three of its six items (disgust −0.009, p = 0.97), and response speed is below null on
+sad and neutral. Those negatives stay negatives.
+
+**Nothing rests on one rater.** All 2,443 raters were deleted in turn and the analysis
+refit each time, 17,101 model fits per grouping. On the three manifest groupings the
+largest move any single deletion produces is **0.0020** in dTVD, against effects of
+0.014–0.062. The latent construal split is the least stable — up to 0.0152 on the
+headline `neutral` cell, ~15% of its value — but even the minimum over all 2,443
+deletions (0.0875) stays far above that cell's null of 0.0284.
+
+### Did the stand-in it replaces get it right?
+
+Partly, and the part it got wrong is the part that mattered. Across all 30
+(grouping × item) audio cells the fitted dTVD and the matched-decile approximation
+rank-correlate at **ρ = +0.67** (+0.78 in visual), so a reader ranking cells by the old
+number would have got a broadly similar list. But the approximation runs **1.93× large**
+in audio and 0.90× in visual, so the bias is not even a constant — and it names `neutral`
+as the shifted response category in **83%** of cells against the fitted model's **60%**.
+It is drawn to the modal response. The two name a different moved category in about a
+third of cells, and *which wrong answer moved* is the entire reason the nominal model is
+the right tool.
 
 ### Does it cost anything — the A → B transfer test
 
@@ -363,19 +428,33 @@ beyond what a size-matched random split costs.** Against a ceiling of 72.7 that 
 about a sixth of the headroom between chance and the best achievable label. Across
 behavioural groupings the loss is zero.
 
-### Which classes are least invariant
+### Which classes are least invariant — and why that cannot be quoted without the key
 
-The two metrics disagree, so both are reported. By ΔR² across groupings (audio):
-**neutral** (0.011), **sad** (0.008), happy (0.005), anger (0.004), fear (0.003),
-disgust (0.002). By total-variation distance of the matched response distribution —
-which sees *which* wrong answer was given, not just whether it was wrong: **sad**
-(0.19), **disgust** (0.15), **fear** (0.14).
+By ΔR² across groupings (audio): **neutral** (0.011), **sad** (0.008), happy (0.005),
+anger (0.004), fear (0.003), disgust (0.002).
 
-Sad is worst on both. It is also the class where the crowd majority reproduces the
-actor's intent least often on audio (19.4%, n = 1,271 clips) against a per-class
-ceiling of 0.737. And it is the class the fine-tuned model is least precise on against
-the crowd label (0.211, n = 97 clips actually heard as sad). Sadness in voice is the
-weakest part of this benchmark by every measurement made here.
+By the fitted model's dTVD net of each item's own permutation null — the one to read,
+because dTVD's floor scales with that item's n: **neutral** +0.024, **anger** +0.020,
+**fear** +0.016, happy +0.009, disgust +0.009, sad +0.008.
+
+**That ranking is keyed on the actor's direction and it does not survive re-keying.**
+Redefine the items by the leave-one-rater-out crowd majority instead — the rater's own
+vote dropped before the majority is taken, so nobody is scored against a label they
+helped build — and the strongest individual results replicate: response speed × *anger*
+goes from +0.040 to **+0.046**, session position × *anger* from +0.034 to **+0.045**,
+both still p ≤ 0.005. The ranking does not. Under the crowd key it is **sad > anger >
+happy**, with neutral fourth. **Only `anger` holds its position under both keys.** That
+is not a contradiction, because the two keys select different trials: "item = sad" means
+12,474 clips an actor was *directed* to perform as sad under one key, and 2,323 clips the
+crowd *actually called* sad under the other. It does mean the category ranking must never
+be quoted without naming the key.
+
+Sad is worth watching anyway, for reasons the DIF analysis no longer supplies: it is the
+class where the crowd majority reproduces the actor's intent least often on audio (19.4%,
+n = 1,271 clips) against a per-class ceiling of 0.737, and the class the fine-tuned model
+is least precise on against the crowd label (0.211, n = 97 clips actually heard as sad).
+The rest of this repo still picks sadness out as its weakest point; the nominal model,
+keyed on intent, does not.
 
 ## Limitations
 
@@ -411,9 +490,19 @@ weakest part of this benchmark by every measurement made here.
   its third decimal moves if you change `--panels` or `--bootstrap`. Every number here is
   pinned to one exact command (see [Reproduce](#reproduce)); quoting the estimate to more
   than three decimals would be quoting noise.
+- **The nominal model's χ² p-values are anticonservative, and are labelled descriptive
+  for that reason.** It assumes trials are conditionally independent given θ, and they
+  are not: clip difficulty produces **1.7–3.4× more clip-level variance than the model
+  allows** (median 2.7×, measured per item in `invariance/out/clip-heterogeneity-audio.json`).
+  The rater-permutation null inherits the real clip structure, so `excess` and `p(perm)`
+  are the calibrated numbers and the χ² column is not. Unidimensionality — one latent
+  rater trait behind all six items — is assumed and, at six items, untestable.
+- **The category ranking depends on the label key**, and only `anger` holds its place
+  under both the actor's-intent key and the crowd-consensus key. Quoting "neutral is the
+  least invariant category" without naming the key overstates what was found.
 - **No rater demographics exist in CREMA-D**, so the invariance groupings are
-  behavioural proxies. The one grouping that shows an effect is latent and
-  data-derived; the held-out split and the ability residualisation address
+  behavioural proxies. The largest effect by either model comes from a grouping that is
+  latent and data-derived; the held-out split and the ability residualisation address
   circularity but do not make it a substantive group like age or culture.
 - **Neither of the two moves here is methodologically new.** Estimating irreducible
   error from human soft labels and auditing SOTA against it is
@@ -438,7 +527,12 @@ weakest part of this benchmark by every measurement made here.
      that does — Bock's nominal response model, differential distractor functioning,
      [difNLR](https://journal.r-project.org/articles/RJ-2020-014/index.html),
      multi-group latent class analysis — is mature in educational testing and, as far
-     as we can find, has never been pointed at annotators.
+     as we can find, has never been pointed at annotators. **That model is now fitted
+     here, not approximated**: Bock (1972) by marginal ML with IRT-LR-DIF, cross-checked
+     against R's `mirt`. Until recently this repo compared by-group response shares
+     inside ability deciles and called it Bock-style, which was a stand-in for exactly
+     the thing being claimed. The claim is narrower than it sounds and stays narrow: the
+     machinery is standard and old, only its target is new.
   2. **Testing invariance rather than calibrating it away.** Wong & Chen treat
      annotator group as a *confounder to control*; we treat it as a *hypothesis to
      test*. Zero of the Sachdeva-citing papers run a DIF test on emotion or affect
@@ -463,7 +557,11 @@ against the official CREMA-D repository):
       clip-bootstrap CIs, curve in R, per modality and per emotion class
 - [x] split-half assumption-light cross-check
 - [x] published SOTA table, 33 rows, provenance and rejected numbers documented
-- [x] LR-DIF + Mantel-Haenszel + nominal response shift, five rater groupings
+- [x] LR-DIF + Mantel-Haenszel, five rater groupings
+- [x] fitted Bock (1972) nominal response model with IRT-LR-DIF, a 200-replicate rater
+      permutation null, and an independent cross-check against R's `mirt`
+- [x] leave-one-rater-out: all 2,443 raters deleted in turn, 17,101 fits per grouping
+- [x] the DIF analysis re-keyed on the leave-one-rater-out crowd majority
 - [x] A → B transfer with a size-matched permutation null
 - [x] wav2vec2-base fine-tune, actor-disjoint split, scored against both labels, three seeds
 - [x] figures, light and dark, every number read from the artifacts at draw time
@@ -474,10 +572,6 @@ Pending:
 
 - [ ] the `--split random` cautionary baseline (code path exists, never run; it is a
       footnote, never a headline)
-- [ ] leave-one-rater-out consensus key as the DIF robustness check (currently keyed
-      on intent only)
-- [ ] a proper nominal response model (Bock 1972) fit rather than the matched-decile
-      response-distribution comparison used here
 - [ ] read the full text of Wong & Chen, ASRU 2025
       ([DOI](https://doi.org/10.1109/ASRU65441.2025.11434646)) — paywalled, no
       preprint, abstract only so far. It is the nearest prior work and the related-work
@@ -494,6 +588,10 @@ Pending:
 .venv/bin/python ceiling/ceiling.py --panels 1,2,3,5,7,9,10,11,13,15,21,31,51,101,201 \
                                     --bootstrap 150 --seed 0
 .venv/bin/python invariance/dif.py --modality audio
+.venv/bin/python invariance/nrm.py --modality audio --perm 200
+.venv/bin/python invariance/nrm.py --modality audio --key consensus_loo --perm 200
+.venv/bin/python invariance/nrm.py --modality audio --loo --tag loo \
+    --loo-groups grp_speed,grp_extremity,grp_position,grp_style,grp_style_resid
 .venv/bin/python invariance/transfer.py --modality audio
 .venv/bin/python modeling/finetune.py --seed 0 # ~30 min each on an M4 Pro over MPS
 .venv/bin/python modeling/finetune.py --seed 1 # seed also picks the actor split
@@ -546,6 +644,8 @@ Every script has a runnable self-check with planted known answers:
 ```
 .venv/bin/python ceiling/ceiling.py --check
 .venv/bin/python invariance/dif.py --check
+.venv/bin/python invariance/nrm.py --check      # recovers a planted nominal DIF effect
+.venv/bin/python invariance/nrm.py --mirt-check # agrees with R/mirt on a fixture
 .venv/bin/python invariance/transfer.py --check
 .venv/bin/python modeling/common.py            # asserts the actor split never leaks
 .venv/bin/python figures/make.py --check       # asserts a simulated artifact aborts the draw
