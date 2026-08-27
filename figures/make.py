@@ -260,8 +260,8 @@ def fig_sota(theme):
     title(fig, t,
           "Four audio results sit above the ceiling — and none of them says which label it scored",
           "The ceiling is the best accuracy any deterministic model can reach against the majority vote of a\n"
-          "10-rater panel. It binds only if a paper scored against that consensus label. Twelve of the fourteen\n"
-          "papers checked never state their label target, so the excess cannot be attributed either way.")
+          "10-rater panel. It binds only if a paper scored against that consensus label. Eleven of the thirteen\n"
+          "modelling papers checked state no label target at all, so the excess cannot be attributed either way.")
     footer(fig, t, "sources: ceiling/out/ceiling.json (n = 7,442 clips, 150 clip bootstraps) · "
                    "ceiling/sota.csv, every value read from the paper's own abstract or results table "
                    "(provenance in ceiling/SOURCES.md). Leaky and non-speaker-independent rows excluded.")

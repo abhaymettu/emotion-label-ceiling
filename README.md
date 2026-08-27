@@ -8,8 +8,9 @@ the choice of label.**
 **And the listeners' own label has a ceiling. On audio-only CREMA-D, no model can exceed
 72.7% (95% CI 72.3–73.2, n = 7,442 clips, 2,443 raters, median 10 raters per clip) against
 the crowd consensus. Four published speaker-independent results sit above it: 76.75, 74.50,
-73.83 and 73.34. Twelve of the fourteen papers checked never say which of the two labels
-they scored.**
+73.83 and 73.34. Eleven of the thirteen modelling papers checked state no label target at
+all, and the twelfth uses both without saying which one its headline number is scored
+against.**
 
 ---
 
@@ -224,7 +225,7 @@ engine got wrong: [`ceiling/SOURCES.md`](ceiling/SOURCES.md).
 
 **Audiovisual. Ceiling = 0.828.** The single most informative row in this repo:
 **VAVL** ([Goncalves et al. 2025](https://arxiv.org/abs/2305.07216)) is the *only*
-paper of the fourteen we checked that states it scores against the crowd consensus
+paper of the fourteen in `sota.csv` that states it scores against the crowd consensus
 ("the perceived emotions from the audio-visual modality"). It reports **0.826 ± .015
 F1-micro**. The ceiling is **0.828 [0.825, 0.833]**.
 
@@ -233,7 +234,12 @@ exactly on it, and does not exceed it.
 
 Everything reported above the audiovisual ceiling — 89.49, 85.06, 84.89, 84.57,
 83.70 — is label-target **unspecified**. So is every audio number in the table above.
-Twelve of fourteen papers never say.
+
+The exact count, from `ceiling/sota.csv`: **fourteen distinct papers**, of which thirteen are
+modelling papers and one (Cao et al. 2014) is the dataset paper. **Eleven of the thirteen
+state no label target at all.** The twelfth, Lei & Cao 2023, is the one paper built around
+the intended/perceived distinction and uses both, but does not say which its headline 85.06
+is scored against. The thirteenth is VAVL. Cao et al. state theirs: intent.
 
 ### What this does and does not show
 
@@ -364,8 +370,9 @@ weakest part of this benchmark by every measurement made here.
   **unverified extrapolation**. The within-corpus intensity contrast (0.168 low → 0.348
   high, within-actor, n = 455 clips per level) supports the direction and nothing more. No
   measurement in this repo touches natural speech.
-- **The label-target problem cuts both ways.** Twelve of fourteen papers do not state
-  whether they scored against intended or consensus labels. We cannot assign the
+- **The label-target problem cuts both ways.** Eleven of the thirteen modelling papers in
+  `sota.csv` do not state whether they scored against intended or consensus labels, and a
+  twelfth uses both without pinning its headline to either. We cannot assign the
   above-ceiling audio results to either explanation, and we do not.
 - **Our ceiling assumes exchangeable raters within a clip — and the second half of
   this repo shows that assumption failing.** If raters are a mixture, $C(R)$ still
