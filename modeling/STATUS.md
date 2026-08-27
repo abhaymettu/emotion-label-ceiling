@@ -63,3 +63,21 @@ Everything is written incrementally, so a killed session loses at most one epoch
   no run has been done. When it is, it is a footnote, never the headline.
 - Multiple seeds. `finetune.py` writes `"n_seeds": 1` and a caveat into every `metrics.json`
   for exactly this reason. One run is not a result.
+
+## Known blocker at hand-off
+
+The `facebook/wav2vec2-base` checkpoint had not finished downloading when this session ended:
+`~/.cache/huggingface/hub/models--facebook--wav2vec2-base` held 8 KB of a ~380 MB model.
+HuggingFace is reachable but was serving at **~1 KB/s** while agent A's `git lfs` pull of the
+7,442 CREMA-D wavs was running. This is bandwidth contention, not a broken URL — a plain
+`curl` of `config.json` returned 200 over both HTTP/1.1 and HTTP/2.
+
+The watcher waits for the audio to finish before it starts training, so by the time the
+encoder download runs the link should be free. If it is still crawling, pre-pull the encoder
+by hand before anything else:
+
+    .venv/bin/python -c "from transformers import AutoModel; AutoModel.from_pretrained('facebook/wav2vec2-base')"
+
+A forward/backward smoke test on MPS was started and had to be killed while still waiting on
+that download, so **the training step has not yet been observed to run end to end**. Watch the
+first epoch rather than assuming it works.
