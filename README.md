@@ -251,10 +251,32 @@ measurement we made.
   measurement invariance and differential *rater* functioning to ML annotation is
   [Sachdeva et al., FAccT 2022](https://doi.org/10.1145/3531146.3533216), on a hate
   speech corpus. **We are not the first to bring invariance testing to annotation.**
-  What is unclaimed: nobody has done either on speech emotion; Sachdeva et al.'s
-  many-facet Rasch machinery needs *ordinal* items and does not transfer to a six-way
-  unordered forced choice; and CREMA-D supplies an external intent criterion that
-  subjective-annotation corpora do not have.
+  Nor is psychometric modelling of speech-emotion annotators new: Wong & Chen
+  ([ASRU 2025](https://doi.org/10.1109/ASRU65441.2025.11434646)) fit a Rasch model to
+  MSP-Podcast and speechocean762 to build a scalar reference that absorbs "differing
+  bias between groups of annotators."
+
+  What remains unclaimed, after screening all ~40 papers citing Sachdeva et al. and
+  searching the nominal-DIF literature directly:
+
+  1. **Nominal responses.** Every prior annotator-psychometrics result we found is
+     *ordinal* — Sachdeva et al.'s many-facet Rasch, Wong & Chen's Rasch reference,
+     MOS-bias work. None transfers to a six-way unordered forced choice. The machinery
+     that does — Bock's nominal response model, differential distractor functioning,
+     [difNLR](https://journal.r-project.org/articles/RJ-2020-014/index.html),
+     multi-group latent class analysis — is mature in educational testing and, as far
+     as we can find, has never been pointed at annotators.
+  2. **Testing invariance rather than calibrating it away.** Wong & Chen treat
+     annotator group as a *confounder to control*; we treat it as a *hypothesis to
+     test*. Zero of the Sachdeva-citing papers run a DIF test on emotion or affect
+     annotation in any modality.
+  3. **An external criterion.** CREMA-D records what the actor was directed to
+     portray. Subjective-annotation corpora have no such anchor, which is what lets us
+     key DIF on something outside every rater.
+
+  Caveat on that first point: Wong & Chen is paywalled with no preprint and we have
+  read only its abstract. If its full text turns out to run group-level DIF, item 2
+  weakens.
 - **n is stated everywhere above and every interval is a 95% CI.** Where an interval
   is absent, the quantity is a published number we copied, not one we estimated.
 
@@ -277,9 +299,10 @@ Pending:
       on intent only)
 - [ ] a proper nominal response model (Bock 1972) fit rather than the matched-decile
       response-distribution comparison used here
-- [ ] one open scoop risk: a Rasch-model paper on MSP-Podcast and speechocean762,
-      referenced but not yet located. If it does group-level annotator invariance it
-      is prior art on the emotion application.
+- [ ] read the full text of Wong & Chen, ASRU 2025
+      ([DOI](https://doi.org/10.1109/ASRU65441.2025.11434646)) — paywalled, no
+      preprint, abstract only so far. It is the nearest prior work and the related-work
+      section should not be written without it.
 
 Every script has a runnable self-check with planted known answers:
 
