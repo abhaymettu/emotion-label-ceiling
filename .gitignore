@@ -11,3 +11,4 @@ stimuli/*.wav
 data/SIMULATED_*.parquet
 ceiling/out/
 invariance/out/
+data/audio/

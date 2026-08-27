@@ -1,0 +1,90 @@
+{
+  "source": "github.com/CheyneyComputerScience/CREMA-D (master)",
+  "paper": "Cao et al. 2014, IEEE Trans. Affective Computing 5(4):377-390",
+  "paper_claims": {
+    "n_clips": 7442,
+    "n_actors": 91,
+    "n_actors_male": 48,
+    "n_actors_female": 43,
+    "n_raters": 2443,
+    "clips_per_rater": 90,
+    "clips_per_rater_per_modality": 30,
+    "n_sentences": 12,
+    "min_actor_age": 20,
+    "max_actor_age": 74
+  },
+  "observed": {
+    "n_clips": 7442,
+    "n_actors": 91,
+    "n_actors_male": 48,
+    "n_actors_female": 43,
+    "n_raters": 2443,
+    "n_sentences": 12,
+    "min_actor_age": 20,
+    "max_actor_age": 74
+  },
+  "claim_mismatches": {},
+  "reconciliation": {
+    "rows_in_source_csv": 219688,
+    "rows_in_ratings_long": 219686,
+    "expected_responses_if_every_rater_did_90": 219870,
+    "shortfall_vs_expected": 184,
+    "raters_with_fewer_than_90": 50,
+    "raters_with_exactly_90": 2393,
+    "min_responses_by_a_rater": 37,
+    "rater_modality_cells_not_30": 65,
+    "clip_modality_cells": 22326,
+    "clip_modality_cells_expected": 22326,
+    "readme_claim_95pct_clips_over_7_ratings": {
+      "claim": ">7 ratings for 95% of clips",
+      "observed_pct_clip_modality_cells_over_7": 99.61,
+      "observed_pct_clips_over_7_total_ratings": 100.0
+    },
+    "sentence_filenames_rows": 7442,
+    "sentence_filenames_match_rated_clips": true
+  },
+  "source_consistency_checks": {
+    "dispEmo_matches_filename": 0,
+    "dispLevel_matches_filename": 0,
+    "ans_field_matches_respEmo": 0,
+    "dispVal_missing": 540,
+    "subType_all_4": true
+  },
+  "drops": [
+    {
+      "rule": "malformed respLevel kept with NaN intensity",
+      "rows_dropped": 0,
+      "rows_affected": 3,
+      "detail": "respLevel held an emotion letter, not a 1-100 value; emotion kept, intensity nulled"
+    },
+    {
+      "rule": "duplicate (rater, clip, modality) response",
+      "rows_dropped": 2,
+      "rows_affected": 4,
+      "detail": "kept the last response by log position (the final answer)"
+    }
+  ],
+  "ratings_per_clip_modality": {
+    "6": 12,
+    "7": 76,
+    "8": 436,
+    "9": 4584,
+    "10": 15096,
+    "11": 2086,
+    "12": 36
+  },
+  "emotion_codes": {
+    "A": "anger",
+    "D": "disgust",
+    "F": "fear",
+    "H": "happy",
+    "N": "neutral",
+    "S": "sad"
+  },
+  "intensity_codes": {
+    "LO": "low",
+    "MD": "medium",
+    "HI": "high",
+    "XX": "unspecified"
+  }
+}
