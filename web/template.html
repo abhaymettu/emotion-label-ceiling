@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>A ruler made of jelly</title>
+<style>
+:root{--bg:#0e0f13;--card:#171922;--line:#262a38;--fg:#e8eaf2;--dim:#8b91a8;--acc:#ffd166;
+--anger:#ef476f;--disgust:#7bc86c;--fear:#a78bfa;--happy:#ffd166;--neutral:#7c8496;--sad:#4cc9f0}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+font:16px/1.55 ui-sans-serif,-apple-system,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif}
+.wrap{max-width:760px;margin:0 auto;padding:40px 20px 80px}
+h1{font-size:clamp(28px,6vw,44px);line-height:1.1;margin:0 0 12px;letter-spacing:-.02em}
+h1 em{color:var(--acc);font-style:normal}
+.sub{color:var(--dim);margin:0 0 28px;max-width:56ch}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;margin:18px 0}
+.meta{color:var(--dim);font-size:13px;display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+.play{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+button{font:inherit;color:inherit;background:none;border:1px solid var(--line);border-radius:10px;
+padding:10px 14px;cursor:pointer;transition:.12s}
+button:hover:not(:disabled){border-color:var(--acc);transform:translateY(-1px)}
+button:disabled{opacity:.45;cursor:default}
+.pbtn{width:56px;height:56px;border-radius:50%;font-size:20px;display:grid;place-items:center;
+background:var(--acc);color:#151515;border:none;flex:0 0 auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(108px,1fr));gap:10px}
+.grid button{padding:14px 8px;text-transform:capitalize;font-weight:500}
+.grid button.you{border-color:var(--fg);background:#22263200}
+.bars{margin:18px 0 6px}
+.row{display:grid;grid-template-columns:82px 1fr 46px;align-items:center;gap:10px;margin:7px 0;font-size:14px}
+.row .lab{text-transform:capitalize;color:var(--dim)}
+.bar{height:22px;border-radius:6px;background:#20242f;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:6px;transition:width .5s cubic-bezier(.2,.8,.2,1)}
+.tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.tag{font-size:13px;border:1px solid var(--line);border-radius:999px;padding:6px 12px;color:var(--dim)}
+.tag b{color:var(--fg);font-weight:600;text-transform:capitalize}
+.tag.hit{border-color:#2f6b4a;background:#12271c}
+.tag.miss{border-color:#6b2f3f;background:#27121a}
+.verdict{font-size:18px;margin:16px 0 4px;line-height:1.4}
+.score{display:flex;gap:22px;color:var(--dim);font-size:14px;margin-top:6px;flex-wrap:wrap}
+.score b{color:var(--fg)}
+.hide{display:none}
+table{width:100%;border-collapse:collapse;font-size:14px;margin-top:8px}
+td{padding:6px 0;border-bottom:1px solid var(--line)}td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.foot{color:var(--dim);font-size:13px;margin-top:36px}
+a{color:var(--acc)}
+</style></head><body><div class="wrap">
+
+<h1>We benchmarked emotion AI against <em>a ruler made of jelly</em>.</h1>
+<p class="sub">Speech-emotion models report accuracy against labels humans barely agree on.
+Listen to a real clip from CREMA-D, guess the emotion, then see what the actor intended,
+how the crowd actually split, and what the model said.</p>
+
+<div class="card" id="stage">
+  <div class="meta" id="meta"></div>
+  <div class="play">
+    <button class="pbtn" id="play" aria-label="Play clip">&#9654;</button>
+    <div><div id="prompt" style="font-weight:600">What emotion is this voice?</div>
+    <div style="color:var(--dim);font-size:13px" id="hint">Play it, then pick one.</div></div>
+  </div>
+  <div class="grid" id="choices"></div>
+
+  <div id="reveal" class="hide">
+    <div class="verdict" id="verdict"></div>
+    <div class="bars" id="bars"></div>
+    <div class="tags" id="tags"></div>
+    <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap">
+      <button id="next">Next clip &rarr;</button>
+      <button id="replay">Replay</button>
+    </div>
+  </div>
+  <div class="score" id="score"></div>
+</div>
+
+<div class="card">
+  <b>What the whole dataset looks like</b>
+  <table id="stats"></table>
+  <p class="foot" style="margin-top:14px">Krippendorff's &alpha; is the inter-rater reliability of the
+  audio-only condition. The ceiling is the best accuracy any model could reach against a
+  10-rater consensus label, given how much those raters disagree with each other.
+  Numbers above the ceiling are not skill, they are overfitting to a particular panel's habits.</p>
+</div>
+
+<p class="foot">CREMA-D: Cao et al. 2014, <i>IEEE Trans. Affective Computing</i> 5(4):377-390.
+Clips and per-rater responses are the authors', reproduced here for illustration.
+Code and full analysis: <a href="https://github.com/abhaymettu/emotion-label-ceiling">emotion-label-ceiling</a>.</p>
+
+</div><script>
+const D = /*__DATA__*/;
+const C = {anger:'--anger',disgust:'--disgust',fear:'--fear',happy:'--happy',neutral:'--neutral',sad:'--sad'};
+const $ = s => document.querySelector(s);
+let order = D.clips.map((_,i)=>i).sort(()=>Math.random()-.5), at = 0, you = 0, crowd = 0, mod = 0, seen = 0;
+let audio = null, guess = null;
+
+function clip(){ return D.clips[order[at % order.length]]; }
+
+function load(){
+  guess = null;
+  const c = clip();
+  audio = new Audio('data:audio/wav;base64,' + c.wav);
+  $('#meta').innerHTML = `<span>clip ${c.id}</span><span>actor ${c.actor}, ${c.sex}, ${c.age}</span>`
+    + `<span>${c.n} crowd raters heard this</span>`;
+  $('#reveal').classList.add('hide');
+  $('#hint').textContent = 'Play it, then pick one.';
+  $('#choices').innerHTML = D.emotions.map(e =>
+    `<button data-e="${e}" style="border-left:3px solid var(${C[e]})">${e}</button>`).join('');
+  $('#choices').querySelectorAll('button').forEach(b =>
+    b.onclick = () => pick(b.dataset.e, b));
+  play();
+}
+
+function play(){ if(audio){ audio.currentTime = 0; audio.play().catch(()=>{
+  $('#hint').textContent = 'Tap play to hear it.'; }); } }
+
+function pick(e, btn){
+  if (guess) return;
+  guess = e; btn.classList.add('you');
+  $('#choices').querySelectorAll('button').forEach(b => b.disabled = true);
+  const c = clip(); seen++;
+  if (guess === c.intended) you++;
+  if (c.consensus === c.intended) crowd++;
+  if (c.model && c.model === c.intended) mod++;
+
+  const top = Math.max(...Object.values(c.votes));
+  $('#bars').innerHTML = D.emotions.map(em => {
+    const v = c.votes[em], pct = c.n ? Math.round(100*v/c.n) : 0;
+    return `<div class="row"><span class="lab">${em}</span>
+      <span class="bar"><i style="width:0%;background:var(${C[em]});opacity:${v?1:.25}"
+        data-w="${pct}"></i></span><span>${pct}%</span></div>`;
+  }).join('');
+  requestAnimationFrame(()=>$('#bars').querySelectorAll('i').forEach(
+    i => i.style.width = i.dataset.w + '%'));
+
+  const agree = Math.round(100*c.agreement);
+  $('#verdict').innerHTML = guess === c.intended
+    ? `You said <b>${guess}</b>. The actor was told to perform <b>${c.intended}</b>. You matched the script.`
+    : `You said <b>${guess}</b>. The actor was told to perform <b>${c.intended}</b>.`;
+  $('#verdict').innerHTML += ` Only <b>${agree}%</b> of the ${c.n} raters who heard this same clip picked ${c.intended}.`;
+
+  const t = [];
+  t.push(`<span class="tag ${guess===c.intended?'hit':'miss'}">you: <b>${guess}</b></span>`);
+  t.push(`<span class="tag">actor intended: <b>${c.intended}</b></span>`);
+  t.push(`<span class="tag ${c.consensus===c.intended?'hit':'miss'}">crowd majority: <b>${c.consensus}</b></span>`);
+  t.push(c.model
+    ? `<span class="tag ${c.model===c.intended?'hit':'miss'}">model: <b>${c.model}</b></span>`
+    : `<span class="tag">model: <b>not trained yet</b></span>`);
+  $('#tags').innerHTML = t.join('');
+  $('#reveal').classList.remove('hide');
+  scoreboard();
+}
+
+function scoreboard(){
+  const pc = n => seen ? Math.round(100*n/seen) + '%' : '--';
+  let s = `<span>after ${seen} clip${seen===1?'':'s'}</span>
+    <span>you match the script <b>${pc(you)}</b></span>
+    <span>the crowd majority matches it <b>${pc(crowd)}</b></span>`;
+  if (D.clips.some(c=>c.model)) s += `<span>the model matches it <b>${pc(mod)}</b></span>`;
+  $('#score').innerHTML = s;
+}
+
+$('#play').onclick = play;
+$('#replay').onclick = play;
+$('#next').onclick = () => { at++; load(); };
+document.addEventListener('keydown', e => {
+  if (e.key === ' ') { e.preventDefault(); play(); }
+  if (e.key === 'Enter' && guess) { at++; load(); }
+});
+
+const S = D.stats;
+$('#stats').innerHTML = [
+  ['clips', S.n_clips.toLocaleString()],
+  ['crowd raters', S.n_raters.toLocaleString()],
+  ['actors', S.n_actors],
+  ["Krippendorff's &alpha;, audio only", S.alpha],
+  ['two random raters agree', Math.round(100*S.pairwise)+'%'],
+  ['crowd majority matches the actor&rsquo;s script', Math.round(100*S.consensus_vs_intended)+'%'],
+  ['reliability ceiling (10-rater consensus)', Math.round(100*S.ceiling)+'%'
+    + ` <span style="color:var(--dim)">[${Math.round(100*S.ceiling_ci[0])}&ndash;${Math.round(100*S.ceiling_ci[1])}]</span>`],
+].map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('');
+
+load(); scoreboard();
+</script></body></html>

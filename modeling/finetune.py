@@ -152,6 +152,9 @@ def main():
     cm = pd.crosstab(pd.Series([EMOTIONS[i] for i in Y], name="target"),
                      pd.Series([EMOTIONS[i] for i in P], name="pred"))
     cm.to_csv(out / "confusion.csv")
+    pd.DataFrame({"clip_id": f["test"].clip_id, "pred": [EMOTIONS[i] for i in P],
+                  "intended": [EMOTIONS[i] for i in I],
+                  "consensus_audio": [EMOTIONS[i] for i in C]}).to_csv(out / "test_preds.csv", index=False)
 
     ceil = {}
     cj = ROOT / "ceiling/out/ceiling.json"
