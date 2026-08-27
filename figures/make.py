@@ -285,19 +285,18 @@ def fig_intent(theme):
         axl.bar(x, v, width=0.52, color=col, alpha=.9)
         axl.text(x, v + 0.016, f"{v:.4f}", color=col, fontsize=13, fontweight="bold", ha="center")
     axl.axhline(ci["estimate"], color=TEAL, lw=1.8)
-    axl.fill_between([-0.6, 1.6], ci["ci95"][0], ci["ci95"][1], color=t["band"], zorder=0)
-    axl.text(-0.55, ci["estimate"] - 0.036, f'consensus ceiling {ci["estimate"]:.3f} '
-             f'[{ci["ci95"][0]:.3f}, {ci["ci95"][1]:.3f}]', color=TEAL, fontsize=8.6)
-    axl.annotate("", xy=(1.42, a_int), xytext=(1.42, a_con),
+    axl.fill_between([-0.95, 1.6], ci["ci95"][0], ci["ci95"][1], color=t["band"], zorder=0)
+    axl.text(1.58, ci["estimate"] - 0.048, f'ceiling {ci["estimate"]:.3f} '
+             f'[{ci["ci95"][0]:.3f}, {ci["ci95"][1]:.3f}]', color=TEAL, fontsize=8.6, ha="right")
+    axl.annotate("", xy=(-0.40, a_int), xytext=(-0.40, a_con),
                  arrowprops=dict(arrowstyle="<->", color=t["fg"], lw=1.2))
-    axl.text(1.47, (a_int + a_con) / 2, f"{100*(a_int-a_con):.1f}\npoints",
-             color=t["fg"], fontsize=9.4, fontweight="bold", va="center")
+    axl.text(-0.47, (a_int + a_con) / 2, f"{100*(a_int-a_con):.1f}\npoints",
+             color=t["fg"], fontsize=9.4, fontweight="bold", va="center", ha="right")
     axl.axhline(1 / 6, color=RED, ls=(0, (4, 3)), lw=1)
-    axl.text(-0.55, 1 / 6 + 0.020, "chance 0.167", color=RED, fontsize=8.2)
-    axl.set_xticks(xs, [l for _, _, l, _ in ((0, 0, "vs the actor's\nINTENDED emotion", 0),
-                                             (1, 0, "vs the audio-only\nCROWD CONSENSUS", 0))],
-                   color=t["fg"], fontsize=9.6)
-    axl.set_xlim(-0.6, 1.6)
+    axl.text(1.58, 1 / 6 + 0.020, "chance 0.167", color=RED, fontsize=8.2, ha="right")
+    axl.set_xticks(xs, ["vs the actor's\nINTENDED\nemotion", "vs the audio-only\nCROWD\nCONSENSUS"],
+                   color=t["fg"], fontsize=9.2)
+    axl.set_xlim(-0.95, 1.6)
     axl.set_ylim(0, 0.88)
     axl.set_ylabel("test accuracy", color=t["dim"], fontsize=9)
     axl.yaxis.grid(True, color=t["grid"], lw=0.7)
