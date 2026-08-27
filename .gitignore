@@ -8,3 +8,6 @@ stimuli/*.wav
 *.pt
 *.safetensors
 .DS_Store
+data/SIMULATED_*.parquet
+ceiling/out/
+invariance/out/
