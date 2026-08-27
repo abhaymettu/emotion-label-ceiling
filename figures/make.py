@@ -73,6 +73,23 @@ TRA = load_json("invariance/out/transfer-audio.json")
 MET = load_json(f"modeling/runs/{RUN}/metrics.json")
 SOTA = list(csv.DictReader((ROOT / "ceiling/sota.csv").open()))
 
+# every finished fine-tune in this repo, so the SOTA panel carries our own number too
+RUNS = [load_json(f"modeling/runs/{d.name}/metrics.json")
+        for d in sorted((ROOT / "modeling/runs").glob("*-actor-s*"))
+        if (d / "metrics.json").exists()]
+
+
+def ours_row():
+    """This repo's fine-tune, scored against consensus, as a sota.csv-shaped row."""
+    v = [r["test_acc_vs_audio_consensus"] for r in RUNS]
+    n = len(v)
+    lbl = ("this repo, wav2vec2-base trained on intent"
+           + (f", mean of {n} seeds" if n > 1 else f", seed {RUNS[0]['seed']}"))
+    return {"id": "OURS", "system": lbl, "modality": "audio", "metric": "accuracy",
+            "value": f"{100 * sum(v) / n:.2f}", "n_classes": "6",
+            "speaker_independent": "yes", "label_target": "consensus (audio perceived)",
+            "url": "", "note": ""}
+
 
 # ------------------------------------------------------------------ plumbing
 
@@ -188,6 +205,8 @@ def fig_sota(theme):
         c = CEIL["by_modality"][mod]["ceiling_headline"]
         est, (lo, hi) = c["estimate"] * 100, [x * 100 for x in c["ci95"]]
         rows = sota_rows(mod) + [r for r in SOTA if r["id"] in extra]
+        if mod == "audio" and RUNS:
+            rows.append(ours_row())
         rows = sorted(rows, key=lambda r: float(r["value"]))
 
         ax.axvspan(lo, hi, color=t["band"], zorder=0)
@@ -213,7 +232,10 @@ def fig_sota(theme):
         labs = []
         for r in rows:
             tag = {"unspecified": "label target unstated",
-                   "intended": "scored vs actor intent"}.get(r["label_target"], r["label_target"])
+                   "intended": "scored vs actor intent",
+                   "consensus (audio perceived)": "scored vs crowd consensus",
+                   "consensus (audiovisual perceived)": "scored vs crowd consensus"}.get(
+                       r["label_target"], r["label_target"])
             labs.append(f'{r["system"]}  ·  {tag}')
         ax.set_yticks(range(len(rows)), labs, color=t["fg"], fontsize=8.9)
         vals = [float(r["value"]) for r in rows]
