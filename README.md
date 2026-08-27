@@ -508,9 +508,10 @@ overwritten: `ceiling/out/` is gitignored, so it is regenerated in place and nev
 committed, and a number quoted from it outlives the file it came from. It appears in no
 commit in this repository's history.
 
-The real lesson is the last row of [Limitations](#limitations): with 150 bootstrap resamples
-the CI endpoints themselves carry roughly ±0.001, so the third decimal is not worth
-arguing over. It is worth **pinning to one command**, which is why the command is written
+The real lesson is a row of [Limitations](#limitations): across those three runs the point
+estimate moves by 0.0006 and the CI endpoints by 0.0004 (low) and 0.0006 (high), which is
+enough to flip a third decimal but nowhere near enough to change a conclusion. The third
+decimal is not worth arguing over. It is worth **pinning to one command**, which is why the command is written
 out above rather than left as `python ceiling/ceiling.py`.
 
 Every script has a runnable self-check with planted known answers:
