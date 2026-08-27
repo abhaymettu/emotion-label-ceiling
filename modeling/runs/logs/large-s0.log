@@ -1,0 +1,16 @@
+Loading weights:   0%|          | 0/403 [00:00<?, ?it/s]Loading weights: 100%|██████████| 403/403 [00:00<00:00, 74384.11it/s]
+[transformers] [1mWav2Vec2Model LOAD REPORT[0m from: /Users/abhay/.cache/hf-local/wav2vec2-large
+Key                          | Status     |  | 
+-----------------------------+------------+--+-
+project_hid.weight           | UNEXPECTED |  | 
+project_q.weight             | UNEXPECTED |  | 
+quantizer.weight_proj.weight | UNEXPECTED |  | 
+quantizer.codevectors        | UNEXPECTED |  | 
+project_hid.bias             | UNEXPECTED |  | 
+quantizer.weight_proj.bias   | UNEXPECTED |  | 
+project_q.bias               | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+/Users/abhay/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '

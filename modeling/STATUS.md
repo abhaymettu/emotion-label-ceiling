@@ -1,6 +1,9 @@
 # modeling / web — status
 
-Last updated by agent B. Nothing here is a result yet: **no training run has finished.**
+Last updated 2026-08-27. **Stale header fixed:** this file used to say no training run had
+finished. Nine have. Three `wav2vec2-base` runs with per-batch padding (the published
+numbers), and six matched fixed-padding runs, three base and three `wav2vec2-large`, for
+the capacity comparison in the README. See `compare_capacity.py`.
 
 ## Running right now
 

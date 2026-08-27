@@ -1,0 +1,26 @@
+Loading weights:   0%|          | 0/211 [00:00<?, ?it/s]Loading weights: 100%|██████████| 211/211 [00:00<00:00, 72833.36it/s]
+[transformers] [1mWav2Vec2Model LOAD REPORT[0m from: facebook/wav2vec2-base
+Key                          | Status     |  | 
+-----------------------------+------------+--+-
+project_hid.bias             | UNEXPECTED |  | 
+project_q.bias               | UNEXPECTED |  | 
+project_q.weight             | UNEXPECTED |  | 
+quantizer.codevectors        | UNEXPECTED |  | 
+project_hid.weight           | UNEXPECTED |  | 
+quantizer.weight_proj.weight | UNEXPECTED |  | 
+quantizer.weight_proj.bias   | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+ep0 loss 1.3337 val_acc 0.6417 (261s)
+ep1 loss 0.8248 val_acc 0.7210 (257s)
+ep2 loss 0.5782 val_acc 0.6574 (257s)
+ep3 loss 0.4253 val_acc 0.7121 (260s)
+ep4 loss 0.2841 val_acc 0.7377 (257s)
+ep5 loss 0.1834 val_acc 0.7500 (257s)
+ep6 loss 0.1148 val_acc 0.7455 (257s)
+ep7 loss 0.0837 val_acc 0.7545 (257s)
+{
+  "test_acc_vs_intended": 0.741126070991432,
+  "test_acc_vs_audio_consensus": 0.4663402692778458
+}

@@ -1,0 +1,26 @@
+Loading weights:   0%|          | 0/403 [00:00<?, ?it/s]Loading weights: 100%|██████████| 403/403 [00:00<00:00, 76734.36it/s]
+[transformers] [1mWav2Vec2Model LOAD REPORT[0m from: /Users/abhay/.cache/hf-local/wav2vec2-large
+Key                          | Status     |  | 
+-----------------------------+------------+--+-
+project_q.weight             | UNEXPECTED |  | 
+project_hid.weight           | UNEXPECTED |  | 
+quantizer.weight_proj.bias   | UNEXPECTED |  | 
+project_q.bias               | UNEXPECTED |  | 
+quantizer.weight_proj.weight | UNEXPECTED |  | 
+quantizer.codevectors        | UNEXPECTED |  | 
+project_hid.bias             | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+ep0 loss 1.4194 val_acc 0.5710 (603s)
+ep1 loss 0.9856 val_acc 0.6752 (602s)
+ep2 loss 0.7619 val_acc 0.6696 (604s)
+ep3 loss 0.5963 val_acc 0.6752 (602s)
+ep4 loss 0.4109 val_acc 0.6829 (602s)
+ep5 loss 0.2767 val_acc 0.6863 (605s)
+ep6 loss 0.1885 val_acc 0.6940 (602s)
+ep7 loss 0.1473 val_acc 0.6984 (601s)
+{
+  "test_acc_vs_intended": 0.7321537522879805,
+  "test_acc_vs_audio_consensus": 0.4838316046369738
+}
