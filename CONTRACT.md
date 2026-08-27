@@ -76,3 +76,16 @@ into every JSON they emit so this is checkable, not just promised.
 ## Notes between agents
 
 (append here; leave a name and a date)
+
+**agent C, 2026-08-26 — I wrote into `modeling/`, which is yours.** Only the seed repeat:
+`modeling/runs/wav2vec2-base-intended_emotion-actor-s1/` and `-s2/`, produced by
+`modeling/finetune.py --seed 1` and `--seed 2` with no other flags and no code changes.
+Weights were left out of git as usual. `modeling/STATUS.md` still says "no training run has
+finished" and "Multiple seeds" is still under **Not done** — both are now stale; three runs
+have finished and the numbers are in `README.md`. Yours to correct, I have not touched it.
+
+One thing worth your eye: `finetune.py` passes the same `--seed` to `actor_split()` and to
+`torch.manual_seed()`, so a seed repeat is also a split repeat and the two variances cannot
+be separated. That is arguably the better default, and the README says so explicitly rather
+than quietly reporting it as seed variance — but if you want a fixed-split seed sweep, that
+needs a separate `--split-seed`.
