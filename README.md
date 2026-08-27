@@ -1,9 +1,9 @@
 # emotion-label-ceiling
 
-**One wav2vec2 fine-tune, one set of predictions, 1,640 held-out clips: 74.9% accurate
-against the emotion the actor was told to perform, 52.2% against what listeners actually
-heard. Same model, same audio, same predictions — 22.7 points of the result is nothing but
-the choice of label.**
+**Three wav2vec2 fine-tunes, actor-disjoint, ~1,640 held-out clips each: 73.4% accurate
+against the emotion the actor was told to perform, 47.8% against what listeners actually
+heard. Same models, same audio, same predictions — a mean of 25.6 points of the result is
+nothing but the choice of label.**
 
 **And the listeners' own label has a ceiling. On audio-only CREMA-D, no model can exceed
 72.7% (95% CI 72.3–73.2, n = 7,442 clips, 2,443 raters, median 10 raters per clip) against
@@ -18,25 +18,41 @@ against.**
 
 `facebook/wav2vec2-base` + mean pool + linear head, trained on the **actor's intended
 emotion**, split by actor so no speaker appears on two sides: 60 actors train, 11 validate,
-20 test. 8 epochs, MPS, seed 0. Then the same predictions on the same 1,640 test clips are
-scored twice, once against each of CREMA-D's two labels.
+20 test. 8 epochs, MPS. Three seeds. Each run's predictions on its own held-out actors are
+then scored twice, once against each of CREMA-D's two labels.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="figures/03-intent-vs-heard-dark.png">
-  <img alt="Left: the same model scores 0.7488 against the actor's intended emotion and 0.5220 against the audio-only crowd consensus, a 22.7 point gap, both below the 0.727 consensus ceiling. Right: per class, the number of test clips shifts from the acted count to what the crowd actually heard — neutral 240 to 826, disgust 280 to 168, fear 280 to 170, happy 280 to 115, sad 280 to 97." src="figures/03-intent-vs-heard-light.png">
+  <img alt="Left: seed 0 scores 0.7488 against the actor's intended emotion and 0.5220 against the audio-only crowd consensus, a 22.7 point gap, with seeds 1 and 2 marked lower on both bars; all three sit below the 0.727 consensus ceiling. Right: per class, the number of test clips shifts from the acted count to what the crowd actually heard — neutral 240 to 826, disgust 280 to 168, fear 280 to 170, happy 280 to 115, sad 280 to 97." src="figures/03-intent-vs-heard-light.png">
 </picture>
 
-| | value |
-|---|---|
-| test accuracy vs the actor's **intended** emotion | **0.7488** |
-| test accuracy vs the **audio-only crowd consensus** | **0.5220** |
-| gap | **22.7 points** |
-| best validation accuracy (vs intended) | 0.7422 |
-| test clips / held-out actors / seed | 1,640 / 20 / 0 |
-| audio consensus ceiling, for comparison | 0.727 [0.723, 0.732] |
-| headroom left to that ceiling | 0.205 |
+| | seed 0 | seed 1 | seed 2 | mean | sd |
+|---|---|---|---|---|---|
+| test accuracy vs the actor's **intended** emotion | 0.7488 | 0.7328 | 0.7209 | **0.7342** | 0.0140 |
+| test accuracy vs the **audio-only crowd consensus** | 0.5220 | 0.4552 | 0.4578 | **0.4783** | 0.0378 |
+| **gap** | 0.2268 | 0.2776 | 0.2632 | **0.2559** | 0.0262 |
+| best validation accuracy (vs intended) | 0.7422 | 0.7350 | 0.7522 | 0.7431 | 0.0086 |
+| test clips (20 held-out actors each) | 1,640 | 1,639 | 1,634 | | |
 
-**The model does not cross the ceiling.** 0.522 is 20.5 points *below* 0.727. That matters
+Every seed is a different actor split as well as a different initialisation, because
+`finetune.py` derives the split from the seed. So the spread above is split variance and
+seed variance together — wider, and more honest, than re-initialising on a fixed split.
+The consensus number is the one that moves (sd 0.038 against 0.014 for intent), which
+makes sense: which actors land in the test set decides how much of that set the crowd
+hears as neutral, and that varies from 50.4% to 55.1% across the three splits.
+
+**Seed 0 is the friendliest of the three.** It gives the highest consensus accuracy and
+therefore the *smallest* gap, 22.7 points against a mean of 25.6. The headline reports
+the mean.
+
+| against the ceiling | |
+|---|---|
+| audio consensus ceiling | 0.727 [0.723, 0.732] |
+| best of three seeds vs consensus | 0.5220 |
+| headroom left to the ceiling, at the best seed | **0.205** |
+
+**No seed comes close to crossing the ceiling.** The best of the three, 0.522, is 20.5
+points *below* 0.727; the mean, 0.478, is 24.9 below. That matters
 for the argument in the other half of this repo: an honestly-built model that is genuinely
 good at the acted task lands nowhere near the consensus bound, which makes four published
 numbers sitting *above* that bound sharper, not weaker. Nothing here says the ceiling is
@@ -45,19 +61,26 @@ easy to reach.
 ### The classes are not the same classes
 
 The split is not uniform. Score against intent and the six classes are near-balanced by
-construction — 280 test clips each, 240 for neutral. Score against what the crowd heard from
-the same audio and the corpus reorganises itself:
+construction — ~280 test clips each, ~240 for neutral. Score against what the crowd heard
+from the same audio and the corpus reorganises itself. Seed 0's test set, with the other two
+seeds in brackets so the pattern can be seen to be a pattern and not a split:
 
 | class | clips, acted | clips, heard by the crowd | model precision vs the crowd label |
 |---|---|---|---|
-| neutral | 240 | **826** | 0.944 |
-| anger | 280 | 264 | 0.608 |
-| fear | 280 | 170 | 0.507 |
-| disgust | 280 | **168** | **0.370** |
-| happy | 280 | 115 | 0.409 |
-| sad | 280 | **97** | 0.211 |
+| neutral | 240 | **826** (855, 900) | 0.944 (0.953, 0.925) |
+| anger | 280 | 264 (257, 253) | 0.608 (0.624, 0.616) |
+| fear | 280 | 170 (174, 157) | 0.507 (0.378, 0.374) |
+| disgust | 280 | **168** (162, 158) | **0.370** (0.377, 0.355) |
+| happy | 280 | 115 (88, 92) | 0.409 (0.284, 0.324) |
+| sad | 280 | **97** (103, 74) | 0.211 (0.168, 0.130) |
 
-Half of the test set (50.4%) is *heard* as neutral where 14.6% was *performed* as neutral.
+**This is the stable half of the result.** The headline accuracies move by three to seven
+points across seeds; the class reorganisation barely moves at all. On all three splits
+neutral roughly quadruples, sad and happy lose two thirds to three quarters of their clips,
+and precision on crowd-labelled sad never exceeds 0.211.
+
+Half of the test set (50.4%, and 52.2% / 55.1% on the other two seeds) is *heard* as
+neutral where 14.6% was *performed* as neutral.
 The model's precision on crowd-labelled disgust is 0.370: when it calls a clip disgust —
 because the actor was performing disgust, and it learned to detect that — listeners heard
 disgust less than two times in five. On crowd-labelled sad it is 0.211.
@@ -74,7 +97,8 @@ alone the crowd majority reproduces the actor's intent on 44.0% of clips and dis
 with their voice. That is a real, learnable acoustic thing. It is not what listeners
 **hear**.
 
-**Stated up front: this is one seed.** See [Limitations](#limitations).
+What survives across seeds, and what does not, is set out in
+[Limitations](#limitations).
 
 ---
 
@@ -206,7 +230,7 @@ engine got wrong: [`ceiling/SOURCES.md`](ceiling/SOURCES.md).
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="figures/02-ceiling-vs-sota-dark.png">
-  <img alt="Audio-only: the ceiling is 72.7 percent with CI 72.3 to 73.2. EmoBox Whisper large v3 at 76.75, EmoBox WavLM large at 74.50, EmoBox HuBERT large at 73.83 and WavLM-Plus at 73.34 all sit above it, and all four state no label target. Eight further audio systems sit below. The human crowd majority sits at 41.0. Audiovisual: the ceiling is 82.8 with CI 82.4 to 83.3. Koo et al. at 89.49, HiCMAE-B at 84.89 and DE-III at 83.70 sit above with no stated label target, while VAVL — the one paper that states it scores against the crowd consensus — sits at 82.60, on the ceiling." src="figures/02-ceiling-vs-sota-light.png">
+  <img alt="Audio-only: the ceiling is 72.7 percent with CI 72.3 to 73.2. This repo's own fine-tune, scored against the crowd consensus, sits at 47.83, far below. EmoBox Whisper large v3 at 76.75, EmoBox WavLM large at 74.50, EmoBox HuBERT large at 73.83 and WavLM-Plus at 73.34 all sit above it, and all four state no label target. Eight further audio systems sit below. The human crowd majority sits at 41.0. Audiovisual: the ceiling is 82.8 with CI 82.4 to 83.3. Koo et al. at 89.49, HiCMAE-B at 84.89 and DE-III at 83.70 sit above with no stated label target, while VAVL — the one paper that states it scores against the crowd consensus — sits at 82.60, on the ceiling." src="figures/02-ceiling-vs-sota-light.png">
 </picture>
 
 **Audio-only, 6-class, speaker-independent splits. Ceiling = 0.727.**
@@ -220,7 +244,7 @@ engine got wrong: [`ceiling/SOURCES.md`](ceiling/SOURCES.md).
 | EmoBox HuBERT base | 71.13 UA | −1.6 | [arXiv:2406.07162](https://arxiv.org/abs/2406.07162) |
 | HiCMAE-B (audio) | 71.11 UAR | −1.6 | [arXiv:2401.05698](https://arxiv.org/abs/2401.05698) |
 | EmoBox WavLM base | 69.64 UA | −3.1 | [arXiv:2406.07162](https://arxiv.org/abs/2406.07162) |
-| **this repo, wav2vec2-base scored vs consensus** | **52.20** | **−20.5** | `modeling/runs/…-s0/metrics.json` |
+| **this repo, wav2vec2-base scored vs consensus, mean of 3 seeds** | **47.83** | **−24.9** | `modeling/runs/…-s{0,1,2}/metrics.json` |
 | Cao et al. 2014, human crowd majority | 41.0 | −31.7 | [PMC4313618](https://pmc.ncbi.nlm.nih.gov/articles/PMC4313618/) |
 
 **Audiovisual. Ceiling = 0.828.** The single most informative row in this repo:
@@ -355,14 +379,16 @@ weakest part of this benchmark by every measurement made here.
 
 ## Limitations
 
-- **One seed.** The fine-tune headline is a single run: `--seed 0`, one actor-disjoint
-  split, one initialisation. Seeds 1 and 2 of the identical config are running and had not
-  finished when this was written; when they land, `modeling/runs/*/metrics.json` carries
-  them and this section gets the mean and the spread. **Until then, treat 0.7488 / 0.5220
-  as one observation, not an estimate with a standard error.** Note also that
-  `finetune.py` derives the actor split from the same seed, so seeds 1 and 2 vary the split
-  as well as the initialisation — a wider and more honest spread than re-initialising on a
-  fixed split, but not the same quantity as a seed-only variance.
+- **Three seeds, which is enough to see a spread and not enough to estimate one.** The
+  headline is a mean over three runs (0.7342 ± 0.0140 vs intent, 0.4783 ± 0.0378 vs
+  consensus), and an sd from n = 3 is itself a noisy quantity — read the range, [0.4552,
+  0.5220] on consensus, rather than the ± . Because `finetune.py` derives the actor split
+  from the seed, the spread mixes split variance with initialisation variance and cannot
+  separate them; a fixed-split, seed-only repeat would be narrower and would answer a
+  different question. What the three runs do establish is that the *sign and rough size* of
+  the intended-vs-consensus gap is not a fluke: it is 22.7, 26.3 and 27.8 points on three
+  disjoint sets of held-out actors, and the per-class reorganisation is near-identical on
+  all three.
 - **Acted emotion.** Portrayals, not felt affect, with a director's intent recorded.
   Everything here is the optimistic case.
 - **CREMA-D contains no spontaneous speech at all.** So the step from "α is only 0.348 even
@@ -439,14 +465,13 @@ against the official CREMA-D repository):
 - [x] published SOTA table, 33 rows, provenance and rejected numbers documented
 - [x] LR-DIF + Mantel-Haenszel + nominal response shift, five rater groupings
 - [x] A → B transfer with a size-matched permutation null
-- [x] wav2vec2-base fine-tune, actor-disjoint split, scored against both labels
+- [x] wav2vec2-base fine-tune, actor-disjoint split, scored against both labels, three seeds
 - [x] figures, light and dark, every number read from the artifacts at draw time
 - [x] audio provenance: all 7,442 git-lfs digests and on-disk sha256s matched against
       `github.com/CheyneyComputerScience/CREMA-D`
 
 Pending:
 
-- [ ] **seeds 1 and 2 of the fine-tune.** Until they land the headline is one run.
 - [ ] the `--split random` cautionary baseline (code path exists, never run; it is a
       footnote, never a headline)
 - [ ] leave-one-rater-out consensus key as the DIF robustness check (currently keyed
@@ -470,7 +495,9 @@ Pending:
                                     --bootstrap 150 --seed 0
 .venv/bin/python invariance/dif.py --modality audio
 .venv/bin/python invariance/transfer.py --modality audio
-.venv/bin/python modeling/finetune.py --seed 0 # ~30 min on an M4 Pro over MPS
+.venv/bin/python modeling/finetune.py --seed 0 # ~30 min each on an M4 Pro over MPS
+.venv/bin/python modeling/finetune.py --seed 1 # seed also picks the actor split
+.venv/bin/python modeling/finetune.py --seed 2
 .venv/bin/python figures/make.py               # -> figures/*-{light,dark}.{png,svg}
 ```
 

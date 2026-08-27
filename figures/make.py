@@ -280,14 +280,20 @@ def fig_intent(theme):
 
     # left: same model, same clips, same predictions, two label sets
     xs = [0, 1]
-    for x, v, lab, col in ((0, a_int, "vs the actor's\nINTENDED emotion", BLUE),
-                           (1, a_con, "vs the audio-only\nCROWD CONSENSUS", AMBER)):
+    other = [r for r in RUNS if r["seed"] != MET["seed"]]
+    for x, v, key, col in ((0, a_int, "test_acc_vs_intended", BLUE),
+                           (1, a_con, "test_acc_vs_audio_consensus", AMBER)):
         axl.bar(x, v, width=0.52, color=col, alpha=.9)
         axl.text(x, v + 0.016, f"{v:.4f}", color=col, fontsize=13, fontweight="bold", ha="center")
+        for r in other:                    # the other seeds, on the same bar
+            axl.plot([x - 0.26, x + 0.26], [r[key]] * 2, color=t["bg"], lw=2.6, zorder=3)
+            axl.plot([x - 0.26, x + 0.26], [r[key]] * 2, color=t["fg"], lw=1.1, zorder=4)
     axl.axhline(ci["estimate"], color=TEAL, lw=1.8)
     axl.fill_between([-0.95, 1.6], ci["ci95"][0], ci["ci95"][1], color=t["band"], zorder=0)
-    axl.text(1.58, ci["estimate"] - 0.048, f'ceiling {ci["estimate"]:.3f} '
+    axl.text(1.58, ci["estimate"] + 0.014, f'ceiling {ci["estimate"]:.3f} '
              f'[{ci["ci95"][0]:.3f}, {ci["ci95"][1]:.3f}]', color=TEAL, fontsize=8.6, ha="right")
+    axl.text(1.58, 0.845, f"— the other {len(other)} seeds", color=t["fg"], fontsize=8.2,
+             ha="right", va="center")
     axl.annotate("", xy=(-0.40, a_int), xytext=(-0.40, a_con),
                  arrowprops=dict(arrowstyle="<->", color=t["fg"], lw=1.2))
     axl.text(-0.47, (a_int + a_con) / 2, f"{100*(a_int-a_con):.1f}\npoints",
@@ -337,10 +343,12 @@ def fig_intent(theme):
     title(fig, t,
           "The model learned what the actor did, not what listeners hear",
           f'wav2vec2-base fine-tuned on the acted intent label, actor-disjoint split, '
-          f'{MET["n_test_clips"]:,} test clips from {MET["n_test_actors"]} held-out actors, seed {MET["seed"]}.\n'
-          "Both bars are the same model scoring the same predictions on the same clips. Only the label changed.")
-    footer(fig, t, f'source: modeling/runs/{RUN}/metrics.json · ceiling from ceiling/out/ceiling.json. '
-                   "Single seed; see README for the spread.")
+          f'{MET["n_test_clips"]:,} test clips from {MET["n_test_actors"]} held-out actors. '
+          f'Bars and the class panel are seed {MET["seed"]};\nthe other {len(RUNS)-1} seeds are marked on the bars. '
+          "Both bars are one model scoring one set of predictions on one set of clips — only the label changed.")
+    seeds = ", ".join(str(r["seed"]) for r in RUNS)
+    footer(fig, t, f'sources: modeling/runs/wav2vec2-base-intended_emotion-actor-s{{{seeds}}}/metrics.json · '
+                   "ceiling from ceiling/out/ceiling.json. Seed also varies the actor split; see README.")
     save(fig, "03-intent-vs-heard", theme)
 
 
