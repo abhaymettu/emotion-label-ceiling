@@ -12,3 +12,4 @@ data/SIMULATED_*.parquet
 ceiling/out/
 invariance/out/
 data/audio/
+agreement/out/run.log

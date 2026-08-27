@@ -1,0 +1,967 @@
+{
+  "source_file": "/Users/abhay/Desktop/Playground/emotion-label-ceiling/data/ratings_long.parquet",
+  "simulated": false,
+  "bootstrap_reps": 2000,
+  "n_ratings": 219686,
+  "n_clips": 7442,
+  "n_raters": 2443,
+  "chance_accuracy": 0.16666666666666666,
+  "alpha_overall": {
+    "alpha": 0.41152754209023645,
+    "ci95": [
+      0.4074465091824435,
+      0.41572676823412585
+    ],
+    "n_units": 22326,
+    "n_ratings": 219686,
+    "boot_reps_finite": 2000,
+    "note": "units are clip-x-modality cells; pools three presentation conditions that differ a lot, so read the by-modality numbers"
+  },
+  "alpha_by_modality": {
+    "audio": {
+      "alpha": 0.26548006157770576,
+      "ci95": [
+        0.2591734943836057,
+        0.27153691428712523
+      ],
+      "n_units": 7442,
+      "n_ratings": 73253,
+      "boot_reps_finite": 2000
+    },
+    "visual": {
+      "alpha": 0.44733887927104377,
+      "ci95": [
+        0.44040331830833934,
+        0.45429302162217705
+      ],
+      "n_units": 7442,
+      "n_ratings": 73191,
+      "boot_reps_finite": 2000
+    },
+    "audiovisual": {
+      "alpha": 0.4864628998216355,
+      "ci95": [
+        0.47951385824580617,
+        0.4931171515421695
+      ],
+      "n_units": 7442,
+      "n_ratings": 73242,
+      "boot_reps_finite": 2000
+    }
+  },
+  "modality_contrasts": {
+    "audio_minus_audiovisual": {
+      "delta_alpha": -0.22098283824392972,
+      "ci95": [
+        -0.22829155385046448,
+        -0.2129813219496033
+      ],
+      "n_clips": 7442,
+      "excludes_zero": true
+    },
+    "audio_minus_visual": {
+      "delta_alpha": -0.181858817693338,
+      "ci95": [
+        -0.19078994369556207,
+        -0.17277636974705438
+      ],
+      "n_clips": 7442,
+      "excludes_zero": true
+    },
+    "visual_minus_audiovisual": {
+      "delta_alpha": -0.03912402055059172,
+      "ci95": [
+        -0.04590571236054121,
+        -0.03217405677859482
+      ],
+      "n_clips": 7442,
+      "excludes_zero": true
+    }
+  },
+  "fleiss_vs_alpha": {
+    "note": "Fleiss' kappa is only defined when every unit has the same number of raters. CREMA-D cells hold 6-12, so kappa is computed on the exactly-10 subset and alpha is recomputed on that same subset for a like-for-like comparison. They differ for two reasons: alpha's expected disagreement carries an (n-1) small-sample correction that kappa's does not, and alpha is defined over the whole ragged design while kappa has to throw 32% of the cells away.",
+    "subset": "clip-modality cells with exactly 10 ratings",
+    "audio": {
+      "n_units_balanced": 5044,
+      "n_units_all": 7442,
+      "fleiss_kappa": 0.26488797862936103,
+      "alpha_same_subset": 0.26490255261868245,
+      "alpha_all_units": 0.26548006157770576
+    },
+    "visual": {
+      "n_units_balanced": 5011,
+      "n_units_all": 7442,
+      "fleiss_kappa": 0.44754684239964154,
+      "alpha_same_subset": 0.4475578672082148,
+      "alpha_all_units": 0.44733887927104377
+    },
+    "audiovisual": {
+      "n_units_balanced": 5041,
+      "n_units_all": 7442,
+      "fleiss_kappa": 0.48834551483734007,
+      "alpha_same_subset": 0.48835566469818437,
+      "alpha_all_units": 0.4864628998216355
+    }
+  },
+  "alpha_by_class": {
+    "note": "Restricting units to one intended emotion also restricts the response marginals, which shrinks expected disagreement and drags alpha down for reasons that have nothing to do with the class being hard. alpha_local uses the subset's own marginals (the usual reported figure, not comparable across classes); alpha_global_marginals holds expected disagreement at the full-modality value and IS comparable across classes. Read the second column.",
+    "audio": {
+      "anger": {
+        "ci95": [
+          0.18457250118979165,
+          0.21097139433652068
+        ],
+        "n_units": 1271,
+        "n_ratings": 12584,
+        "boot_reps_finite": 2000,
+        "alpha_local": 0.19745012434910458,
+        "alpha_global_marginals": 0.29591108726789916,
+        "hit_rate_vs_intended": 0.5162110616656072
+      },
+      "disgust": {
+        "ci95": [
+          0.13562147842183742,
+          0.15595037165731632
+        ],
+        "n_units": 1271,
+        "n_ratings": 12475,
+        "boot_reps_finite": 2000,
+        "alpha_local": 0.14603466657115505,
+        "alpha_global_marginals": 0.1423278843499418,
+        "hit_rate_vs_intended": 0.2827254509018036
+      },
+      "fear": {
+        "ci95": [
+          0.1957025412355187,
+          0.22161335287600908
+        ],
+        "n_units": 1271,
+        "n_ratings": 12483,
+        "boot_reps_finite": 2000,
+        "alpha_local": 0.2084232462742146,
+        "alpha_global_marginals": 0.22696963237637524,
+        "hit_rate_vs_intended": 0.3141872947208203
+      },
+      "happy": {
+        "ci95": [
+          0.18137756534992053,
+          0.2075388710402061
+        ],
+        "n_units": 1271,
+        "n_ratings": 12475,
+        "boot_reps_finite": 2000,
+        "alpha_local": 0.19428350811372974,
+        "alpha_global_marginals": 0.2403384877664122,
+        "hit_rate_vs_intended": 0.28344689378757515
+      },
+      "neutral": {
+        "ci95": [
+          0.05551979790008117,
+          0.08030456295006275
+        ],
+        "n_units": 1087,
+        "n_ratings": 10762,
+        "boot_reps_finite": 2000,
+        "alpha_local": 0.06739978721695805,
+        "alpha_global_marginals": 0.47362976675184754,
+        "hit_rate_vs_intended": 0.7537632410332652
+      },
+      "sad": {
+        "ci95": [
+          0.10845422259340763,
+          0.13116413707503685
+        ],
+        "n_units": 1271,
+        "n_ratings": 12474,
+        "boot_reps_finite": 2000,
+        "alpha_local": 0.12018168018083486,
+        "alpha_global_marginals": 0.24204243752471055,
+        "hit_rate_vs_intended": 0.24947891614558282
+      }
+    },
+    "visual": {
+      "anger": {
+        "ci95": [
+          0.22248164424820027,
+          0.2556861135066222
+        ],
+        "n_units": 1271,
+        "n_ratings": 12497,
+        "boot_reps_finite": 2000,
+        "alpha_local": 0.23921993405615916,
+        "alpha_global_marginals": 0.4218480153397597,
+        "hit_rate_vs_intended": 0.5607745859006161
+      },
+      "disgust": {
+        "ci95": [
+          0.224090514501629,
+          0.25282809227593517
+        ],
+        "n_units": 1271,
+        "n_ratings": 12468,
+        "boot_reps_finite": 2000,
+        "alpha_local": 0.23879798378730277,
+        "alpha_global_marginals": 0.39850129058385186,
+        "hit_rate_vs_intended": 0.5381777350016042
+      },
+      "fear": {
+        "ci95": [
+          0.21207938743183719,
+          0.24028722427465515
+        ],
+        "n_units": 1271,
+        "n_ratings": 12526,
+        "boot_reps_finite": 2000,
+        "alpha_local": 0.22642619262770236,
+        "alpha_global_marginals": 0.3145384481660921,
+        "hit_rate_vs_intended": 0.43198147852466867
+      },
+      "happy": {
+        "ci95": [
+          0.12581308724306076,
+          0.1767812400502017
+        ],
+        "n_units": 1271,
+        "n_ratings": 12540,
+        "boot_reps_finite": 2000,
+        "alpha_local": 0.15215276538153577,
+        "alpha_global_marginals": 0.7561287938676519,
+        "hit_rate_vs_intended": 0.8691387559808612
+      },
+      "neutral": {
+        "ci95": [
+          0.07390298229167935,
+          0.10231332681696341
+        ],
+        "n_units": 1087,
+        "n_ratings": 10703,
+        "boot_reps_finite": 2000,
+        "alpha_local": 0.08819877669825327,
+        "alpha_global_marginals": 0.4713863009390099,
+        "hit_rate_vs_intended": 0.7113893300943661
+      },
+      "sad": {
+        "ci95": [
+          0.20050556323108015,
+          0.22623506717911593
+        ],
+        "n_units": 1271,
+        "n_ratings": 12457,
+        "boot_reps_finite": 2000,
+        "alpha_local": 0.21289032321555856,
+        "alpha_global_marginals": 0.3238195326521217,
+        "hit_rate_vs_intended": 0.3189371437745846
+      }
+    },
+    "audiovisual": {
+      "anger": {
+        "ci95": [
+          0.18385049001267792,
+          0.2135348417873795
+        ],
+        "n_units": 1271,
+        "n_ratings": 12478,
+        "boot_reps_finite": 2000,
+        "alpha_local": 0.19888194657060565,
+        "alpha_global_marginals": 0.47994129546192743,
+        "hit_rate_vs_intended": 0.6451354383715339
+      },
+      "disgust": {
+        "ci95": [
+          0.18068244294131416,
+          0.2087780311723211
+        ],
+        "n_units": 1271,
+        "n_ratings": 12498,
+        "boot_reps_finite": 2000,
+        "alpha_local": 0.19516658804836928,
+        "alpha_global_marginals": 0.41089966652929766,
+        "hit_rate_vs_intended": 0.5994559129460714
+      },
+      "fear": {
+        "ci95": [
+          0.2192576811010176,
+          0.24714595761145253
+        ],
+        "n_units": 1271,
+        "n_ratings": 12546,
+        "boot_reps_finite": 2000,
+        "alpha_local": 0.2332288644673487,
+        "alpha_global_marginals": 0.4158383480367954,
+        "hit_rate_vs_intended": 0.5632073967798501
+      },
+      "happy": {
+        "ci95": [
+          0.1296194913182121,
+          0.1787323672597656
+        ],
+        "n_units": 1271,
+        "n_ratings": 12562,
+        "boot_reps_finite": 2000,
+        "alpha_local": 0.15467284487588162,
+        "alpha_global_marginals": 0.7233641170448754,
+        "hit_rate_vs_intended": 0.8480337525871676
+      },
+      "neutral": {
+        "ci95": [
+          0.05792288829351872,
+          0.08376476053072011
+        ],
+        "n_units": 1087,
+        "n_ratings": 10656,
+        "boot_reps_finite": 2000,
+        "alpha_local": 0.07076059135346935,
+        "alpha_global_marginals": 0.5742929059229287,
+        "hit_rate_vs_intended": 0.7835960960960962
+      },
+      "sad": {
+        "ci95": [
+          0.19755069794750352,
+          0.22437612931739923
+        ],
+        "n_units": 1271,
+        "n_ratings": 12502,
+        "boot_reps_finite": 2000,
+        "alpha_local": 0.2110235073003197,
+        "alpha_global_marginals": 0.3264846451269432,
+        "hit_rate_vs_intended": 0.332266837306031
+      }
+    }
+  },
+  "confusion": {
+    "note": "coincidence[c][k] is how often responses c and k landed on the SAME clip. Symmetric, and it never mentions the actor's intent, so it is the honest answer to 'what do raters confuse'. Rows normalised to sum to 1.",
+    "audio": {
+      "coincidence_row_normalised": {
+        "anger": {
+          "anger": 0.495437404944927,
+          "disgust": 0.20455251587913217,
+          "fear": 0.06347749232049457,
+          "happy": 0.029392048722715478,
+          "neutral": 0.1810613361837331,
+          "sad": 0.02607920194899754
+        },
+        "disgust": {
+          "anger": 0.22136388243240257,
+          "disgust": 0.25948445357081923,
+          "fear": 0.08438208670530192,
+          "happy": 0.039132677571350596,
+          "neutral": 0.3252204159119032,
+          "sad": 0.07041648380822242
+        },
+        "fear": {
+          "anger": 0.07458299856386028,
+          "disgust": 0.09161538300650351,
+          "fear": 0.3361032964192379,
+          "happy": 0.0519246936583585,
+          "neutral": 0.32889329338485374,
+          "sad": 0.1168803349671861
+        },
+        "happy": {
+          "anger": 0.06212505551984062,
+          "disgust": 0.07643188277737047,
+          "fear": 0.09340944585393518,
+          "happy": 0.3592247152137154,
+          "neutral": 0.37181820239469454,
+          "sad": 0.036990698240443695
+        },
+        "neutral": {
+          "anger": 0.058444312466711536,
+          "disgust": 0.09700461495608563,
+          "fear": 0.09035485064183212,
+          "happy": 0.05678194293220008,
+          "neutral": 0.5941221920783248,
+          "sad": 0.10329208692484577
+        },
+        "sad": {
+          "anger": 0.03654751477887617,
+          "disgust": 0.091187634623614,
+          "fear": 0.13940710941318554,
+          "happy": 0.0245255723476955,
+          "neutral": 0.4484500451376454,
+          "sad": 0.2598821236989834
+        }
+      },
+      "top_confusions": [
+        {
+          "pair": [
+            "neutral",
+            "sad"
+          ],
+          "share_of_offdiagonal_mass": 0.1665549407428258
+        },
+        {
+          "pair": [
+            "disgust",
+            "neutral"
+          ],
+          "share_of_offdiagonal_mass": 0.15641660824944748
+        },
+        {
+          "pair": [
+            "fear",
+            "neutral"
+          ],
+          "share_of_offdiagonal_mass": 0.1456940917984042
+        },
+        {
+          "pair": [
+            "anger",
+            "disgust"
+          ],
+          "share_of_offdiagonal_mass": 0.10646621793997459
+        },
+        {
+          "pair": [
+            "anger",
+            "neutral"
+          ],
+          "share_of_offdiagonal_mass": 0.09423944553207476
+        }
+      ],
+      "response_given_intended": {
+        "anger": {
+          "anger": 0.5162,
+          "disgust": 0.12,
+          "fear": 0.0643,
+          "happy": 0.0713,
+          "neutral": 0.0409,
+          "sad": 0.0201
+        },
+        "disgust": {
+          "anger": 0.2157,
+          "disgust": 0.2827,
+          "fear": 0.0663,
+          "happy": 0.0785,
+          "neutral": 0.0609,
+          "sad": 0.071
+        },
+        "fear": {
+          "anger": 0.0534,
+          "disgust": 0.0936,
+          "fear": 0.3142,
+          "happy": 0.0844,
+          "neutral": 0.0521,
+          "sad": 0.1166
+        },
+        "happy": {
+          "anger": 0.0201,
+          "disgust": 0.028,
+          "fear": 0.0304,
+          "happy": 0.2834,
+          "neutral": 0.0208,
+          "sad": 0.0134
+        },
+        "neutral": {
+          "anger": 0.1832,
+          "disgust": 0.3772,
+          "fear": 0.386,
+          "happy": 0.449,
+          "neutral": 0.7538,
+          "sad": 0.5293
+        },
+        "sad": {
+          "anger": 0.0114,
+          "disgust": 0.0985,
+          "fear": 0.1388,
+          "happy": 0.0334,
+          "neutral": 0.0715,
+          "sad": 0.2495
+        }
+      }
+    },
+    "visual": {
+      "coincidence_row_normalised": {
+        "anger": {
+          "anger": 0.5522400546077063,
+          "disgust": 0.19456867696573352,
+          "fear": 0.07408726621961828,
+          "happy": 0.018922431598902067,
+          "neutral": 0.12227270958888496,
+          "sad": 0.03790886101915485
+        },
+        "disgust": {
+          "anger": 0.15639089874314308,
+          "disgust": 0.45635056520399814,
+          "fear": 0.09668588110077367,
+          "happy": 0.023203247151237547,
+          "neutral": 0.1462019639147287,
+          "sad": 0.12116744388611864
+        },
+        "fear": {
+          "anger": 0.08077064081232459,
+          "disgust": 0.13113978528952752,
+          "fear": 0.4247706713504112,
+          "happy": 0.021508267337147117,
+          "neutral": 0.17276699536746445,
+          "sad": 0.16904363984312515
+        },
+        "happy": {
+          "anger": 0.015736551350085604,
+          "disgust": 0.02400727324494107,
+          "fear": 0.01640695876121864,
+          "happy": 0.8213488504519917,
+          "neutral": 0.11109174853773185,
+          "sad": 0.011408617654031297
+        },
+        "neutral": {
+          "anger": 0.06501833165502131,
+          "disgust": 0.09672103649660578,
+          "fear": 0.08426691735262132,
+          "happy": 0.07103223312560111,
+          "neutral": 0.5675926941488468,
+          "sad": 0.11536878722130375
+        },
+        "sad": {
+          "anger": 0.04071071619239626,
+          "disgust": 0.16188827783900223,
+          "fear": 0.16651635021818006,
+          "happy": 0.01473222736646607,
+          "neutral": 0.2329968494924261,
+          "sad": 0.3831555788915291
+        }
+      },
+      "top_confusions": [
+        {
+          "pair": [
+            "neutral",
+            "sad"
+          ],
+          "share_of_offdiagonal_mass": 0.13334446513953982
+        },
+        {
+          "pair": [
+            "anger",
+            "disgust"
+          ],
+          "share_of_offdiagonal_mass": 0.11958201779847505
+        },
+        {
+          "pair": [
+            "disgust",
+            "neutral"
+          ],
+          "share_of_offdiagonal_mass": 0.11179119751551167
+        },
+        {
+          "pair": [
+            "fear",
+            "neutral"
+          ],
+          "share_of_offdiagonal_mass": 0.09739659481544921
+        },
+        {
+          "pair": [
+            "fear",
+            "sad"
+          ],
+          "share_of_offdiagonal_mass": 0.09529757035428622
+        }
+      ],
+      "response_given_intended": {
+        "anger": {
+          "anger": 0.5608,
+          "disgust": 0.081,
+          "fear": 0.0909,
+          "happy": 0.0093,
+          "neutral": 0.0457,
+          "sad": 0.0352
+        },
+        "disgust": {
+          "anger": 0.1929,
+          "disgust": 0.5382,
+          "fear": 0.1042,
+          "happy": 0.0144,
+          "neutral": 0.0779,
+          "sad": 0.1003
+        },
+        "fear": {
+          "anger": 0.0465,
+          "disgust": 0.1034,
+          "fear": 0.432,
+          "happy": 0.0099,
+          "neutral": 0.0419,
+          "sad": 0.1207
+        },
+        "happy": {
+          "anger": 0.0283,
+          "disgust": 0.013,
+          "fear": 0.016,
+          "happy": 0.8691,
+          "neutral": 0.0422,
+          "sad": 0.0159
+        },
+        "neutral": {
+          "anger": 0.1453,
+          "disgust": 0.0629,
+          "fear": 0.2188,
+          "happy": 0.0903,
+          "neutral": 0.7114,
+          "sad": 0.409
+        },
+        "sad": {
+          "anger": 0.0262,
+          "disgust": 0.2016,
+          "fear": 0.1381,
+          "happy": 0.0071,
+          "neutral": 0.0809,
+          "sad": 0.3189
+        }
+      }
+    },
+    "audiovisual": {
+      "coincidence_row_normalised": {
+        "anger": {
+          "anger": 0.6157229225043905,
+          "disgust": 0.1973628265685903,
+          "fear": 0.06141594289751342,
+          "happy": 0.011766722630609565,
+          "neutral": 0.09371529038501973,
+          "sad": 0.020016295013876473
+        },
+        "disgust": {
+          "anger": 0.16315895219445975,
+          "disgust": 0.5028576887142181,
+          "fear": 0.10815732616356327,
+          "happy": 0.01569701447340598,
+          "neutral": 0.12936793270886282,
+          "sad": 0.08076108574549004
+        },
+        "fear": {
+          "anger": 0.05237226544560287,
+          "disgust": 0.11156568275442952,
+          "fear": 0.5144489120111987,
+          "happy": 0.01934920361128897,
+          "neutral": 0.17001555910770472,
+          "sad": 0.13224837706977513
+        },
+        "happy": {
+          "anger": 0.010794516492066966,
+          "disgust": 0.01741883821223526,
+          "fear": 0.020815676799435863,
+          "happy": 0.8378458311498795,
+          "neutral": 0.10711464830873683,
+          "sad": 0.006010489037645522
+        },
+        "neutral": {
+          "anger": 0.050631628950501224,
+          "disgust": 0.08454589612667121,
+          "fear": 0.10771591530358916,
+          "happy": 0.06308304276082372,
+          "neutral": 0.5842217336546577,
+          "sad": 0.10980178320375704
+        },
+        "sad": {
+          "anger": 0.02626408245220118,
+          "disgust": 0.12818438895171405,
+          "fear": 0.20349261574508862,
+          "happy": 0.008596876171133529,
+          "neutral": 0.26667142904766455,
+          "sad": 0.3667906076321981
+        }
+      },
+      "top_confusions": [
+        {
+          "pair": [
+            "neutral",
+            "sad"
+          ],
+          "share_of_offdiagonal_mass": 0.13621876869711771
+        },
+        {
+          "pair": [
+            "fear",
+            "neutral"
+          ],
+          "share_of_offdiagonal_mass": 0.13363106612312176
+        },
+        {
+          "pair": [
+            "anger",
+            "disgust"
+          ],
+          "share_of_offdiagonal_mass": 0.13228309828020332
+        },
+        {
+          "pair": [
+            "disgust",
+            "neutral"
+          ],
+          "share_of_offdiagonal_mass": 0.10488661962254457
+        },
+        {
+          "pair": [
+            "fear",
+            "sad"
+          ],
+          "share_of_offdiagonal_mass": 0.10394631946415651
+        }
+      ],
+      "response_given_intended": {
+        "anger": {
+          "anger": 0.6451,
+          "disgust": 0.0759,
+          "fear": 0.0462,
+          "happy": 0.0072,
+          "neutral": 0.0385,
+          "sad": 0.0207
+        },
+        "disgust": {
+          "anger": 0.2037,
+          "disgust": 0.5995,
+          "fear": 0.0603,
+          "happy": 0.0142,
+          "neutral": 0.0541,
+          "sad": 0.0765
+        },
+        "fear": {
+          "anger": 0.0434,
+          "disgust": 0.129,
+          "fear": 0.5632,
+          "happy": 0.0169,
+          "neutral": 0.0502,
+          "sad": 0.1724
+        },
+        "happy": {
+          "anger": 0.0087,
+          "disgust": 0.0068,
+          "fear": 0.0118,
+          "happy": 0.848,
+          "neutral": 0.0184,
+          "sad": 0.0062
+        },
+        "neutral": {
+          "anger": 0.089,
+          "disgust": 0.0854,
+          "fear": 0.1861,
+          "happy": 0.1092,
+          "neutral": 0.7836,
+          "sad": 0.3919
+        },
+        "sad": {
+          "anger": 0.0101,
+          "disgust": 0.1035,
+          "fear": 0.1324,
+          "happy": 0.0044,
+          "neutral": 0.0552,
+          "sad": 0.3323
+        }
+      }
+    }
+  },
+  "intensity": {
+    "design_note": "intensity levels exist only for sentence IEO and only for the five non-neutral emotions -- 91 actors x 5 emotions x 3 levels = 455 clips per level, balanced on actor and emotion. Neutral has no level. This is a within-sentence contrast, not the whole corpus.",
+    "clips_per_level": {
+      "high": 455,
+      "low": 455,
+      "medium": 455
+    },
+    "audio": {
+      "low": {
+        "alpha": 0.16824330761446493,
+        "ci95": [
+          0.14712881613152418,
+          0.1889656409349435
+        ],
+        "n_units": 455,
+        "n_ratings": 4483,
+        "boot_reps_finite": 2000,
+        "hit_rate_vs_intended": 0.2192728083872407
+      },
+      "medium": {
+        "alpha": 0.26593851063483065,
+        "ci95": [
+          0.24301771590902,
+          0.2874628555460484
+        ],
+        "n_units": 455,
+        "n_ratings": 4457,
+        "boot_reps_finite": 2000,
+        "hit_rate_vs_intended": 0.31523446264303345
+      },
+      "high": {
+        "alpha": 0.34764443482532204,
+        "ci95": [
+          0.32262616311690195,
+          0.3716836835680168
+        ],
+        "n_units": 455,
+        "n_ratings": 4497,
+        "boot_reps_finite": 2000,
+        "hit_rate_vs_intended": 0.45585946186346454
+      }
+    },
+    "visual": {
+      "low": {
+        "alpha": 0.39820362501050066,
+        "ci95": [
+          0.36956846222045087,
+          0.42462098410530313
+        ],
+        "n_units": 455,
+        "n_ratings": 4494,
+        "boot_reps_finite": 2000,
+        "hit_rate_vs_intended": 0.4161103693813974
+      },
+      "medium": {
+        "alpha": 0.4337613443390572,
+        "ci95": [
+          0.4049560528414856,
+          0.4609173274970069
+        ],
+        "n_units": 455,
+        "n_ratings": 4469,
+        "boot_reps_finite": 2000,
+        "hit_rate_vs_intended": 0.496979189975386
+      },
+      "high": {
+        "alpha": 0.5228389904525939,
+        "ci95": [
+          0.49252638729921644,
+          0.5494285920579074
+        ],
+        "n_units": 455,
+        "n_ratings": 4442,
+        "boot_reps_finite": 2000,
+        "hit_rate_vs_intended": 0.6283205763169744
+      }
+    },
+    "audiovisual": {
+      "low": {
+        "alpha": 0.3835403237467877,
+        "ci95": [
+          0.35483408969946145,
+          0.41037631195651586
+        ],
+        "n_units": 455,
+        "n_ratings": 4461,
+        "boot_reps_finite": 2000,
+        "hit_rate_vs_intended": 0.45908989015915713
+      },
+      "medium": {
+        "alpha": 0.4424004863215709,
+        "ci95": [
+          0.4141578482662686,
+          0.46703539946597394
+        ],
+        "n_units": 455,
+        "n_ratings": 4513,
+        "boot_reps_finite": 2000,
+        "hit_rate_vs_intended": 0.5548415688012409
+      },
+      "high": {
+        "alpha": 0.5837289449025569,
+        "ci95": [
+          0.5535878068473893,
+          0.6111701647734434
+        ],
+        "n_units": 455,
+        "n_ratings": 4473,
+        "boot_reps_finite": 2000,
+        "hit_rate_vs_intended": 0.7082494969818913
+      }
+    },
+    "high_minus_low_paired": {
+      "audio": {
+        "delta_alpha_high_minus_low": 0.1794011272108571,
+        "ci95": [
+          0.15078596008295897,
+          0.20975434057706518
+        ],
+        "n_actor_emotion_cells": 455,
+        "excludes_zero": true
+      },
+      "visual": {
+        "delta_alpha_high_minus_low": 0.1246353654420932,
+        "ci95": [
+          0.08843839334285475,
+          0.16058587246085335
+        ],
+        "n_actor_emotion_cells": 455,
+        "excludes_zero": true
+      },
+      "audiovisual": {
+        "delta_alpha_high_minus_low": 0.2001886211557692,
+        "ci95": [
+          0.16401353063082352,
+          0.23532520406875956
+        ],
+        "n_actor_emotion_cells": 455,
+        "excludes_zero": true
+      }
+    }
+  },
+  "framing_test_acted_is_the_optimistic_case": {
+    "claim": "CREMA-D is acted, exaggerated emotion, so it should be the optimistic case; natural speech would be worse.",
+    "test": "alpha on deliberately HIGH-intensity portrayals vs deliberately LOW ones, audio-only, IEO clips",
+    "alpha_high": 0.34764443482532204,
+    "ci95_high": [
+      0.32262616311690195,
+      0.3716836835680168
+    ],
+    "alpha_low": 0.16824330761446493,
+    "ci95_low": [
+      0.14712881613152418,
+      0.1889656409349435
+    ],
+    "n_clips_per_level": {
+      "high": 455,
+      "low": 455,
+      "medium": 455
+    },
+    "paired_delta": {
+      "delta_alpha_high_minus_low": 0.1794011272108571,
+      "ci95": [
+        0.15078596008295897,
+        0.20975434057706518
+      ],
+      "n_actor_emotion_cells": 455,
+      "excludes_zero": true
+    },
+    "reference": "Krippendorff's own thresholds: alpha >= 0.800 to draw firm conclusions, >= 0.667 for tentative ones. The deliberately-exaggerated audio-only ceiling sits well under both."
+  },
+  "per_rater": {
+    "note": "agreement with the leave-one-out consensus of the other raters on the same clip-modality cell; ties split proportionally. 'at chance' = fails a one-sided exact binomial test against that rater's own expected match rate under marginal-matched random responding, at BH q<0.05 across all raters.",
+    "n_raters": 2443,
+    "mean": 0.6268295141429698,
+    "sd": 0.08747683775543036,
+    "quantiles": {
+      "0.0": 0.0946,
+      "0.05": 0.4778,
+      "0.25": 0.5764,
+      "0.5": 0.6389,
+      "0.75": 0.687,
+      "0.95": 0.75,
+      "1.0": 0.8389
+    },
+    "mean_expected_by_chance": 0.2067023564324116,
+    "n_at_chance": 10,
+    "pct_at_chance": 0.4093327875562832,
+    "n_below_chance_point_estimate": 5,
+    "by_modality_mean": {
+      "audio": 0.5593230864530807,
+      "visual": 0.6451029304749812,
+      "audiovisual": 0.6763305500048058
+    },
+    "median_rt_ms_at_chance_vs_rest": [
+      3896.75,
+      4257.5
+    ],
+    "alpha_after_dropping_at_chance_raters": {
+      "audio": {
+        "alpha": 0.2677059875364224,
+        "n_ratings": 72960,
+        "alpha_before": 0.26548006157770576
+      },
+      "visual": {
+        "alpha": 0.4506726099776188,
+        "n_ratings": 72921,
+        "alpha_before": 0.44733887927104377
+      },
+      "audiovisual": {
+        "alpha": 0.48934950016581424,
+        "n_ratings": 72958,
+        "alpha_before": 0.4864628998216355
+      }
+    }
+  }
+}
