@@ -118,8 +118,12 @@ def main():
                "started": time.strftime("%Y-%m-%dT%H:%M:%S")},
               open(out / "config.json", "w"), indent=2)
 
+    # num_workers=0 on purpose. Forking after MPS/Metal is initialised deadlocks the
+    # workers on macOS -- intermittently, which looks like a very slow epoch rather than
+    # a hang. Reading the whole 4,906-clip epoch off disk costs ~2.5s, so workers bought
+    # nothing anyway. Batch order is unaffected: the sampler runs in the main process.
     dl = {k: DataLoader(Clips(v, a.label), batch_size=a.bs, shuffle=(k == "train"),
-                        collate_fn=collate, num_workers=4, persistent_workers=True)
+                        collate_fn=collate, num_workers=0)
           for k, v in f.items()}
     model = Model(a.model).to(dev)
     # record what encoder actually got built, so a config difference cannot hide
