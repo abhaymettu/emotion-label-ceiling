@@ -473,6 +473,21 @@ moves the estimate in the third decimal. That exact command reproduces
 **0.7272 [0.7229, 0.7316]** on audio, which is the 0.727 [0.723, 0.732] quoted throughout,
 and it is what `ceiling/out/ceiling.json` and `web/index.html` were built from.
 
+A variant of the audio ceiling, **0.728 [0.722, 0.731]**, had been circulating alongside it.
+It is wrong, and every place it appeared has been corrected to 0.727 [0.723, 0.732]. Where
+it came from: `ceiling/out/` is gitignored — regenerable, therefore overwritten in place and
+never committed — so an earlier run under a different `--panels` / `--bootstrap` grid left a
+number in a note that the artifact it came from no longer held. It is not recoverable from
+git, and it does not reproduce. Two things make 0.727 the right one: the exact command above
+reproduces it, and every artifact currently in the tree agrees with it
+(`ceiling/out/ceiling.json`, the `ceiling_context` block inside
+`modeling/runs/…-s0/metrics.json`, and the built `web/index.html`).
+
+Both numbers are within Monte-Carlo noise of each other, which is the point: with 150
+bootstrap resamples the CI endpoints themselves carry about ±0.001, so the third decimal is
+not a quantity worth arguing over — it is a quantity worth **pinning to one command**, which
+is why the command is written out above rather than left as `python ceiling/ceiling.py`.
+
 Every script has a runnable self-check with planted known answers:
 
 ```
