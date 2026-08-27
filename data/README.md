@@ -164,3 +164,47 @@ would misrepresent the rating data. Excluding them is an audio-modelling
 decision, not an ingest one: `1076_MTI_NEU_XX` and `1076_MTI_SAD_XX` (near-empty),
 `1064_TIE_SAD_XX` (no duration), `1064_IEO_DIS_MD` (a 1-minute file containing
 every emotion for that sentence).
+
+### The mirror is byte-identical to the official repo on the audio — verified, not assumed
+
+The WAVs come from an **unofficial** mirror, `gitlab.com/cs-cooper-lab/crema-d-mirror`,
+not from `github.com/CheyneyComputerScience/CREMA-D`. For a repo whose whole argument is
+provenance, that has to be checked rather than trusted, so it was, on **2026-08-26**:
+
+    GIT_LFS_SKIP_SMUDGE=1 git clone --no-checkout --depth 1 \
+      https://github.com/CheyneyComputerScience/CREMA-D.git official
+    # every AudioWAV blob in each repo is a git-lfs pointer carrying the sha256 of the
+    # real file, so the two file lists can be compared without downloading either one
+    git -C <repo> ls-tree -r HEAD --format='%(objectname) %(path)' | grep ' AudioWAV/' ...
+    # then, separately, hash what actually landed on disk
+    shasum -a 256 data/audio/repo/AudioWAV/*.wav
+
+Three checks, all of them exhaustive — every file, not a sample:
+
+| check | result |
+|---|---|
+| AudioWAV file count, mirror vs official | 7,442 = 7,442 |
+| (filename, git-lfs sha256) pairs, mirror vs official | **all 7,442 identical** |
+| sha256 of the 7,442 WAVs actually on disk vs the official pointers | **all 7,442 identical** |
+
+So the audio this repo models is the official audio, byte for byte. The rating CSVs are
+identical too: `finishedResponses.csv`, `finishedEmoResponses.csv`,
+`finishedResponsesWithRepeatWithPractice.csv`, `SentenceFilenames.csv`,
+`VideoDemographics.csv` and all four R scripts have the same git blob hashes in both
+repos. (They are fetched from `raw.githubusercontent.com` anyway, so the ingest never
+depends on the mirror for them.)
+
+The mirror does differ from the official repo, in three ways, none of which touches
+anything used here:
+
+- **It is missing `processedResults/`** — no `summaryTable.csv`, no `tabulatedVotes.csv`.
+  Those are the published vote tables most CREMA-D papers score against, and they are the
+  files the 3.5% filter above is applied to. This ingest pulls them from
+  `raw.githubusercontent.com` (official), so `validate_against_authors.py` is still
+  checking against the authors' real output.
+- **`docs/` is renamed `public/`** and `README.md` and `public/README.md` are edited —
+  GitLab Pages housekeeping. The mirror's one visible commit is `Delete index.html`.
+- **One extra file:** `VideoFlash/1015_DFA_ANG_XX.mp4`, which the official repo does not
+  have. Video is not used by this project.
+
+Re-run the check any time; it needs no LFS download and takes about a minute.
