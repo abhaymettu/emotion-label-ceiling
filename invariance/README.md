@@ -541,7 +541,17 @@ Stated whether or not they help.
    the groupings anyone would actually want.
 9. **Session position splits one human into two person units** with independent θ. They
    are the same person, so their θ are correlated and the model ignores that, which
-   understates uncertainty on that grouping specifically.
+   understates uncertainty on that grouping specifically. The permutation null for this
+   grouping swaps the early/late label inside each rater, so it at least inherits the
+   pairing even though the model does not.
+10. **The category ranking depends on the key.** Only `anger` holds its position across
+   both the intent key and the crowd-consensus key. Quoting "neutral is the least
+   invariant category" without naming the key would be overstating what was found.
+11. **200 permutations** floor p(perm) at 1/201 = 0.005. Any cell reported at 0.005 means
+   "no permutation replicate reached the observed value", not a precise p.
+12. **The 95% CIs are delete-one jackknife intervals** on dTVD. dTVD contains an absolute
+   value and so is not everywhere differentiable; the jackknife is approximate near
+   dTVD ≈ 0. They are intervals on dTVD, not on dTVD net of its null.
 
 ## What this design cannot support
 
