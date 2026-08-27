@@ -293,9 +293,9 @@ def leave_one_rater_out(counts, group, base, obs, max_raters=None, seed=0, verbo
         keep[r] = False
         c2, g2 = counts[keep], group[keep]
         ng2 = np.array([(g2 == 0).sum(), (g2 == 1).sum()], float)
-        b = fit_nrm(c2, g2, init=base, maxit=60)
+        b = fit_nrm(c2, g2, init=base, maxit=40, tol=1e-5)
         for i in range(K):
-            f = fit_nrm(c2, g2, free_item=i, init=b, maxit=60)
+            f = fit_nrm(c2, g2, free_item=i, init=b, maxit=40, tol=1e-5)
             vals[EMOTIONS[i]][n] = dif_stats(f, i, ng2)["dtvd"]
         if verbose and (n + 1) % 200 == 0:
             el = time.time() - t0
@@ -465,6 +465,7 @@ def main() -> int:
                     help="comma-separated grouping vars to run LOO on")
     ap.add_argument("--loo-max", type=int, default=0, help="0 = every rater")
     ap.add_argument("--check", action="store_true")
+    ap.add_argument("--tag", default="", help="extra suffix on the output filenames")
     ap.add_argument("--key", default="intent", choices=["intent", "consensus_loo"],
                     help="define items by the actor's intent (default) or by the "
                          "leave-one-rater-out crowd majority label")
@@ -542,6 +543,7 @@ def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     suffix = f"-{a.modality}" if a.modality else ""
     suffix += "-consensusloo" if a.key == "consensus_loo" else ""
+    suffix += f"-{a.tag}" if a.tag else ""
     tab.to_csv(OUT / f"nrm-dif{suffix}.csv", index=False)
     (OUT / f"nrm-dif{suffix}.json").write_text(json.dumps(res, indent=2))
 
