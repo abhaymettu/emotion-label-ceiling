@@ -127,6 +127,27 @@ emotion that reliably survives the loss of the face.
 This is not a subtle statistical artefact — it is the plurality response for
 four of six classes, over ~12,500 ratings each.
 
+## The label a benchmark actually trains on
+
+Nobody trains on alpha. Published CREMA-D results score against the majority
+vote over ~10 raters, so it is worth saying plainly how solid that vote is.
+7,442 clips per condition:
+
+| | audio only | visual only | audiovisual |
+|---|---|---|---|
+| mean modal-vote share | 0.626 | 0.695 | 0.721 |
+| median modal-vote share | 0.60 | 0.70 | 0.73 |
+| clips with **no actual majority** (<50%) | **21.1%** | 15.9% | 12.2% |
+| clips where the vote is a **tie** | **8.5%** | 6.3% | 5.7% |
+| clips at >=80% agreement | 24.3% | 40.1% | 44.7% |
+| unanimous clips | **4.0%** | 12.5% | 14.1% |
+| consensus differs from the actor's intent | **54.8%** | 31.2% | 25.2% |
+
+Audio only: **4% of clips are unanimous**, one clip in five has no majority at
+all, and one in twelve is a tie broken arbitrarily. The consensus label — the
+thing benchmarks report accuracy against — disagrees with what the actor was
+told to portray on **more than half** the corpus.
+
 ## Per-rater reliability
 
 Each rating is scored against the **leave-one-out** consensus of the other raters

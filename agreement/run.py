@@ -284,6 +284,28 @@ def main():
                       "ceiling sits well under both."),
     }
 
+    # ---------- 5b. how solid is the label a benchmark would train on? ----------
+    # Benchmarks do not train on alpha; they train on the majority vote. So state
+    # plainly how often that vote is a real majority and how often it is a coin toss.
+    clips = pd.read_parquet(ROOT / "data" / "clips.parquet")
+    res["consensus_label_quality"] = {"note": (
+        "the majority-vote label is what published CREMA-D benchmarks actually score against. "
+        "agreement_{mod} is the modal response's share of that clip's votes; a tie means the "
+        "label is decided arbitrarily.")}
+    for m in MODALITIES:
+        share = clips[f"agreement_{m}"]
+        res["consensus_label_quality"][m] = {
+            "n_clips": int(len(clips)),
+            "mean_modal_share": float(share.mean()),
+            "median_modal_share": float(share.median()),
+            "pct_clips_modal_share_under_50": float((share < 0.5).mean() * 100),
+            "pct_clips_modal_share_at_or_over_80": float((share >= 0.8).mean() * 100),
+            "pct_clips_unanimous": float((share == 1.0).mean() * 100),
+            "pct_clips_consensus_tied": float(clips[f"consensus_tied_{m}"].mean() * 100),
+            "pct_clips_consensus_differs_from_intended": float(
+                (clips[f"consensus_{m}"].astype(str) != clips.intended_emotion.astype(str)).mean() * 100),
+        }
+
     # ---------- 6. per-rater reliability ----------
     r = per_rater(df)
     OUT.mkdir(parents=True, exist_ok=True)

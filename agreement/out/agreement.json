@@ -919,6 +919,39 @@
     },
     "reference": "Krippendorff's own thresholds: alpha >= 0.800 to draw firm conclusions, >= 0.667 for tentative ones. The deliberately-exaggerated audio-only ceiling sits well under both."
   },
+  "consensus_label_quality": {
+    "note": "the majority-vote label is what published CREMA-D benchmarks actually score against. agreement_{mod} is the modal response's share of that clip's votes; a tie means the label is decided arbitrarily.",
+    "audio": {
+      "n_clips": 7442,
+      "mean_modal_share": 0.6260441400995016,
+      "median_modal_share": 0.6,
+      "pct_clips_modal_share_under_50": 21.123353937113677,
+      "pct_clips_modal_share_at_or_over_80": 24.281107229239453,
+      "pct_clips_unanimous": 4.031174415479709,
+      "pct_clips_consensus_tied": 8.546089760816985,
+      "pct_clips_consensus_differs_from_intended": 54.783660306369256
+    },
+    "visual": {
+      "n_clips": 7442,
+      "mean_modal_share": 0.6950201374516074,
+      "median_modal_share": 0.7,
+      "pct_clips_modal_share_under_50": 15.936576189196453,
+      "pct_clips_modal_share_at_or_over_80": 40.13705993012631,
+      "pct_clips_unanimous": 12.469766191883902,
+      "pct_clips_consensus_tied": 6.261757592045149,
+      "pct_clips_consensus_differs_from_intended": 31.20128997581295
+    },
+    "audiovisual": {
+      "n_clips": 7442,
+      "mean_modal_share": 0.7205288381181959,
+      "median_modal_share": 0.7272727272727273,
+      "pct_clips_modal_share_under_50": 12.160709486697124,
+      "pct_clips_modal_share_at_or_over_80": 44.705724267669986,
+      "pct_clips_unanimous": 14.149422198333781,
+      "pct_clips_consensus_tied": 5.670518677774792,
+      "pct_clips_consensus_differs_from_intended": 25.208277344799786
+    }
+  },
   "per_rater": {
     "note": "agreement with the leave-one-out consensus of the other raters on the same clip-modality cell; ties split proportionally. 'at chance' = fails a one-sided exact binomial test against that rater's own expected match rate under marginal-matched random responding, at BH q<0.05 across all raters.",
     "n_raters": 2443,
