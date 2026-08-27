@@ -3,7 +3,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>A ruler made of jelly</title>
 <style>
-:root{--bg:#0e0f13;--card:#171922;--line:#262a38;--fg:#e8eaf2;--dim:#8b91a8;--acc:#ffd166;
+:root{--bg:#0e0f13;--card:#171922;--card2:#1d202b;--line:#262a38;--fg:#e8eaf2;--dim:#8b91a8;
+--acc:#ffd166;--script:#ffd166;--room:#4cc9f0;--you:#e8eaf2;
 --anger:#ef476f;--disgust:#7bc86c;--fear:#a78bfa;--happy:#ffd166;--neutral:#7c8496;--sad:#4cc9f0}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);
@@ -11,7 +12,8 @@ font:16px/1.55 ui-sans-serif,-apple-system,"Segoe UI",Inter,Roboto,Helvetica,Ari
 .wrap{max-width:760px;margin:0 auto;padding:40px 20px 80px}
 h1{font-size:clamp(28px,6vw,44px);line-height:1.1;margin:0 0 12px;letter-spacing:-.02em}
 h1 em{color:var(--acc);font-style:normal}
-.sub{color:var(--dim);margin:0 0 28px;max-width:56ch}
+h2{font-size:20px;margin:0 0 4px;letter-spacing:-.01em}
+.sub{color:var(--dim);margin:0 0 28px;max-width:58ch}
 .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;margin:18px 0}
 .meta{color:var(--dim);font-size:13px;display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px}
 .play{display:flex;align-items:center;gap:14px;margin-bottom:18px}
@@ -21,33 +23,85 @@ button:hover:not(:disabled){border-color:var(--acc);transform:translateY(-1px)}
 button:disabled{opacity:.45;cursor:default}
 .pbtn{width:56px;height:56px;border-radius:50%;font-size:20px;display:grid;place-items:center;
 background:var(--acc);color:#151515;border:none;flex:0 0 auto}
+.pbtn.on{animation:pulse 1.1s ease-out infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,209,102,.45)}100%{box-shadow:0 0 0 18px rgba(255,209,102,0)}}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(108px,1fr));gap:10px}
 .grid button{padding:14px 8px;text-transform:capitalize;font-weight:500}
-.grid button.you{border-color:var(--fg);background:#22263200}
+.grid button.you{border-color:var(--fg);background:#22262f}
+
+/* three-way verdict */
+.three{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0 4px}
+.who{background:var(--card2);border:1px solid var(--line);border-top:2px solid var(--line);
+border-radius:12px;padding:12px;text-align:center}
+.who .k{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--dim)}
+.who .v{font-size:17px;font-weight:600;text-transform:capitalize;margin-top:4px}
+.who .m{font-size:12px;color:var(--dim);margin-top:3px}
+.who.hit{border-top-color:#3f9e6b;background:#132219}
+.who.miss{border-top-color:#b04a63;background:#22141a}
+.script{border:1px dashed var(--script);border-radius:12px;padding:11px 14px;margin:12px 0 0;
+display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.script .k{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--acc)}
+.script .v{font-size:17px;font-weight:600;text-transform:capitalize}
+
+.call{border-radius:12px;padding:14px 16px;margin:14px 0 0;font-size:15px;line-height:1.5;
+border:1px solid var(--line);background:var(--card2)}
+.call.sided{border-color:#7a611f;background:linear-gradient(180deg,#241f11,#1c1a17)}
+.call.room{border-color:#1f5c74;background:linear-gradient(180deg,#0f2029,#171a20)}
+.call b{color:var(--fg);text-transform:capitalize}
+.call .lede{display:block;font-size:12px;letter-spacing:.09em;text-transform:uppercase;
+color:var(--dim);margin-bottom:6px}
+.call.sided .lede{color:var(--acc)}
+.call.room .lede{color:var(--room)}
+
 .bars{margin:18px 0 6px}
 .row{display:grid;grid-template-columns:82px 1fr 46px;align-items:center;gap:10px;margin:7px 0;font-size:14px}
 .row .lab{text-transform:capitalize;color:var(--dim)}
+.row.mark .lab{color:var(--fg);font-weight:600}
 .bar{height:22px;border-radius:6px;background:#20242f;overflow:hidden}
 .bar i{display:block;height:100%;border-radius:6px;transition:width .5s cubic-bezier(.2,.8,.2,1)}
-.tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
-.tag{font-size:13px;border:1px solid var(--line);border-radius:999px;padding:6px 12px;color:var(--dim)}
-.tag b{color:var(--fg);font-weight:600;text-transform:capitalize}
-.tag.hit{border-color:#2f6b4a;background:#12271c}
-.tag.miss{border-color:#6b2f3f;background:#27121a}
-.verdict{font-size:18px;margin:16px 0 4px;line-height:1.4}
-.score{display:flex;gap:22px;color:var(--dim);font-size:14px;margin-top:6px;flex-wrap:wrap}
-.score b{color:var(--fg)}
 .hide{display:none}
+
+/* scoreboard */
+.sb{display:grid;gap:12px;margin-top:16px}
+.sbrow{display:grid;grid-template-columns:120px 1fr 62px;gap:12px;align-items:center}
+.sbrow .nm{font-size:14px;display:flex;align-items:center;gap:7px}
+.dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+.track{height:26px;border-radius:8px;background:#20242f;position:relative;overflow:hidden}
+.track i{display:block;height:100%;border-radius:8px;transition:width .6s cubic-bezier(.2,.8,.2,1)}
+.pct{text-align:right;font-variant-numeric:tabular-nums;font-size:15px;font-weight:600}
+.pips{display:flex;gap:4px;margin-top:14px;flex-wrap:wrap}
+.pip{width:16px;height:16px;border-radius:5px;border:1px solid var(--line);background:#20242f}
+.pip.h{background:#3f9e6b;border-color:#3f9e6b}
+.pip.m{background:#4a2731;border-color:#7d3a4c}
+.lead{color:var(--dim);font-size:13px;margin-top:14px}
+.lead b{color:var(--fg)}
+
+/* finding */
+.big{display:flex;gap:26px;flex-wrap:wrap;margin:16px 0 6px}
+.big div{flex:1 1 190px}
+.big .n{font-size:clamp(32px,8vw,46px);font-weight:700;letter-spacing:-.03em;line-height:1}
+.big .n.s{color:var(--script)}.big .n.r{color:var(--room)}
+.big .c{color:var(--dim);font-size:13px;margin-top:6px;max-width:26ch}
+.stack{display:flex;height:34px;border-radius:9px;overflow:hidden;margin:18px 0 10px;
+border:1px solid var(--line)}
+.stack span{display:grid;place-items:center;font-size:12px;font-weight:600;color:#10121a;
+transition:width .7s cubic-bezier(.2,.8,.2,1);overflow:hidden;white-space:nowrap}
+.key{display:flex;gap:16px;flex-wrap:wrap;color:var(--dim);font-size:13px}
+.key i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
+
 table{width:100%;border-collapse:collapse;font-size:14px;margin-top:8px}
-td{padding:6px 0;border-bottom:1px solid var(--line)}td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+td{padding:6px 0;border-bottom:1px solid var(--line)}
+td:last-child{text-align:right;font-variant-numeric:tabular-nums}
 .foot{color:var(--dim);font-size:13px;margin-top:36px}
+.card .foot{margin-top:14px}
 a{color:var(--acc)}
+@media(max-width:520px){.three{grid-template-columns:1fr}.sbrow{grid-template-columns:104px 1fr 52px}}
 </style></head><body><div class="wrap">
 
 <h1>We benchmarked emotion AI against <em>a ruler made of jelly</em>.</h1>
 <p class="sub">Speech-emotion models report accuracy against labels humans barely agree on.
-Listen to a real clip from CREMA-D, guess the emotion, then see what the actor intended,
-how the crowd actually split, and what the model said.</p>
+Listen to a real CREMA-D clip, guess the emotion, then see three answers at once: yours, the
+crowd's, and a wav2vec2 model's. The model never heard these actors during training.</p>
 
 <div class="card" id="stage">
   <div class="meta" id="meta"></div>
@@ -59,26 +113,38 @@ how the crowd actually split, and what the model said.</p>
   <div class="grid" id="choices"></div>
 
   <div id="reveal" class="hide">
-    <div class="verdict" id="verdict"></div>
+    <div class="script" id="scriptline"></div>
+    <div class="three" id="three"></div>
+    <div id="call"></div>
     <div class="bars" id="bars"></div>
-    <div class="tags" id="tags"></div>
-    <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap">
+    <div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap">
       <button id="next">Next clip &rarr;</button>
       <button id="replay">Replay</button>
     </div>
   </div>
-  <div class="score" id="score"></div>
 </div>
 
 <div class="card">
-  <b>What the whole dataset looks like</b>
-  <table id="stats"></table>
-  <p class="foot" style="margin-top:14px">Krippendorff's &alpha; is the inter-rater reliability of the
-  audio-only condition. The ceiling is the best accuracy any model could reach against a
-  10-rater consensus label, given how much those raters disagree with each other.
-  Numbers above the ceiling are not skill, they are overfitting to a particular panel's habits.</p>
+  <h2>Who is reading the actor's script?</h2>
+  <p style="color:var(--dim);font-size:14px;margin:0">Share of clips so far where each answer
+  matched what the actor was <i>told</i> to perform.</p>
+  <div class="sb" id="sb"></div>
+  <div class="pips" id="pips"></div>
+  <div class="lead" id="lead"></div>
 </div>
 
+<div class="card" id="findingcard"></div>
+
+<div class="card">
+  <h2>What the whole dataset looks like</h2>
+  <table id="stats"></table>
+  <p class="foot">Krippendorff's &alpha; is the inter-rater reliability of the audio-only
+  condition. The ceiling is the best accuracy any model could reach against a 10-rater
+  consensus label, given how much those raters disagree with each other. Numbers above the
+  ceiling are not skill, they are overfitting to a particular panel's habits.</p>
+</div>
+
+<p class="foot" id="method"></p>
 <p class="foot">CREMA-D: Cao et al. 2014, <i>IEEE Trans. Affective Computing</i> 5(4):377-390.
 Clips and per-rater responses are the authors', reproduced here for illustration.
 Code and full analysis: <a href="https://github.com/abhaymettu/emotion-label-ceiling">emotion-label-ceiling</a>.</p>
@@ -87,8 +153,11 @@ Code and full analysis: <a href="https://github.com/abhaymettu/emotion-label-cei
 const D = /*__DATA__*/;
 const C = {anger:'--anger',disgust:'--disgust',fear:'--fear',happy:'--happy',neutral:'--neutral',sad:'--sad'};
 const $ = s => document.querySelector(s);
-let order = D.clips.map((_,i)=>i).sort(()=>Math.random()-.5), at = 0, you = 0, crowd = 0, mod = 0, seen = 0;
-let audio = null, guess = null;
+const pc = x => Math.round(100*x) + '%';
+const hasModel = D.clips.some(c => c.model);
+
+let order = D.clips.map((_,i)=>i).sort(()=>Math.random()-.5), at = 0;
+let tally = {you:[], room:[], model:[]}, audio = null, guess = null;
 
 function clip(){ return D.clips[order[at % order.length]]; }
 
@@ -96,65 +165,176 @@ function load(){
   guess = null;
   const c = clip();
   audio = new Audio('data:audio/wav;base64,' + c.wav);
+  audio.onended = () => $('#play').classList.remove('on');
   $('#meta').innerHTML = `<span>clip ${c.id}</span><span>actor ${c.actor}, ${c.sex}, ${c.age}</span>`
-    + `<span>${c.n} crowd raters heard this</span>`;
+    + `<span>${c.n} crowd raters heard this</span><span>held-out actor</span>`;
   $('#reveal').classList.add('hide');
   $('#hint').textContent = 'Play it, then pick one.';
   $('#choices').innerHTML = D.emotions.map(e =>
     `<button data-e="${e}" style="border-left:3px solid var(${C[e]})">${e}</button>`).join('');
-  $('#choices').querySelectorAll('button').forEach(b =>
-    b.onclick = () => pick(b.dataset.e, b));
+  $('#choices').querySelectorAll('button').forEach(b => b.onclick = () => pick(b.dataset.e, b));
   play();
 }
 
-function play(){ if(audio){ audio.currentTime = 0; audio.play().catch(()=>{
-  $('#hint').textContent = 'Tap play to hear it.'; }); } }
+function play(){
+  if(!audio) return;
+  audio.currentTime = 0;
+  $('#play').classList.add('on');
+  audio.play().catch(()=>{ $('#play').classList.remove('on');
+    $('#hint').textContent = 'Tap play to hear it.'; });
+}
+
+function who(k, ans, intended, meta){
+  return `<div class="who ${ans===intended?'hit':'miss'}"><div class="k">${k}</div>
+    <div class="v">${ans}</div><div class="m">${meta}</div></div>`;
+}
 
 function pick(e, btn){
   if (guess) return;
   guess = e; btn.classList.add('you');
   $('#choices').querySelectorAll('button').forEach(b => b.disabled = true);
-  const c = clip(); seen++;
-  if (guess === c.intended) you++;
-  if (c.consensus === c.intended) crowd++;
-  if (c.model && c.model === c.intended) mod++;
+  const c = clip();
+  tally.you.push(guess === c.intended);
+  tally.room.push(c.consensus === c.intended);
+  if (c.model) tally.model.push(c.model === c.intended);
 
-  const top = Math.max(...Object.values(c.votes));
+  const iv = c.votes[c.intended], cv = c.votes[c.consensus];
+  $('#scriptline').innerHTML = `<span class="k">the actor was told to perform</span>
+    <span class="v">${c.intended}</span>`;
+
+  let cards = who('you', guess, c.intended, guess===c.intended ? 'matched the script' : 'missed it')
+    + who('the room', c.consensus, c.intended, `${cv} of ${c.n} listeners`);
+  cards += c.model
+    ? who('the model', c.model, c.intended, 'wav2vec2, unseen actor')
+    : `<div class="who"><div class="k">the model</div><div class="v">&mdash;</div>
+       <div class="m">no prediction for this clip</div></div>`;
+  $('#three').innerHTML = cards;
+
+  // the finding, one clip at a time
+  let call = '';
+  if (c.model && c.consensus !== c.intended && c.model === c.intended) {
+    call = `<div class="call sided"><span class="lede">the model sided with the script</span>
+      Only <b>${iv}</b> of ${c.n} listeners said <b>${c.intended}</b>. The room settled on
+      <b>${c.consensus}</b>. The model said <b>${c.intended}</b> anyway &mdash; the label the
+      actor was handed, not the sound the room actually heard.</div>`;
+  } else if (c.model && c.consensus !== c.intended && c.model === c.consensus) {
+    call = `<div class="call room"><span class="lede">the model sided with the room</span>
+      The room heard <b>${c.consensus}</b>, not the scripted <b>${c.intended}</b>, and the model
+      agreed with the room. On the held-out split it does this far less often than the reverse.</div>`;
+  } else if (c.model && c.consensus !== c.intended) {
+    call = `<div class="call"><span class="lede">nobody agreed</span>
+      The script said <b>${c.intended}</b>, the room said <b>${c.consensus}</b>, the model said
+      <b>${c.model}</b>. Three answers, one clip.</div>`;
+  } else if (c.consensus === c.intended && iv < c.n) {
+    call = `<div class="call"><span class="lede">even the easy ones split</span>
+      The room's majority matched the script, but <b>${c.n - iv}</b> of ${c.n} listeners still
+      heard something else.</div>`;
+  }
+  $('#call').innerHTML = call;
+
   $('#bars').innerHTML = D.emotions.map(em => {
-    const v = c.votes[em], pct = c.n ? Math.round(100*v/c.n) : 0;
-    return `<div class="row"><span class="lab">${em}</span>
+    const v = c.votes[em], p = c.n ? Math.round(100*v/c.n) : 0;
+    return `<div class="row${em===c.intended?' mark':''}"><span class="lab">${em}${
+      em===c.intended?' &#9733;':''}</span>
       <span class="bar"><i style="width:0%;background:var(${C[em]});opacity:${v?1:.25}"
-        data-w="${pct}"></i></span><span>${pct}%</span></div>`;
+        data-w="${p}"></i></span><span>${p}%</span></div>`;
   }).join('');
-  requestAnimationFrame(()=>$('#bars').querySelectorAll('i').forEach(
-    i => i.style.width = i.dataset.w + '%'));
+  requestAnimationFrame(()=>$('#bars').querySelectorAll('i').forEach(i => i.style.width = i.dataset.w+'%'));
 
-  const agree = Math.round(100*c.agreement);
-  $('#verdict').innerHTML = guess === c.intended
-    ? `You said <b>${guess}</b>. The actor was told to perform <b>${c.intended}</b>. You matched the script.`
-    : `You said <b>${guess}</b>. The actor was told to perform <b>${c.intended}</b>.`;
-  $('#verdict').innerHTML += ` Only <b>${agree}%</b> of the ${c.n} raters who heard this same clip picked ${c.intended}.`;
-
-  const t = [];
-  t.push(`<span class="tag ${guess===c.intended?'hit':'miss'}">you: <b>${guess}</b></span>`);
-  t.push(`<span class="tag">actor intended: <b>${c.intended}</b></span>`);
-  t.push(`<span class="tag ${c.consensus===c.intended?'hit':'miss'}">crowd majority: <b>${c.consensus}</b></span>`);
-  t.push(c.model
-    ? `<span class="tag ${c.model===c.intended?'hit':'miss'}">model: <b>${c.model}</b></span>`
-    : `<span class="tag">model: <b>not trained yet</b></span>`);
-  $('#tags').innerHTML = t.join('');
   $('#reveal').classList.remove('hide');
   scoreboard();
 }
 
 function scoreboard(){
-  const pc = n => seen ? Math.round(100*n/seen) + '%' : '--';
-  let s = `<span>after ${seen} clip${seen===1?'':'s'}</span>
-    <span>you match the script <b>${pc(you)}</b></span>
-    <span>the crowd majority matches it <b>${pc(crowd)}</b></span>`;
-  if (D.clips.some(c=>c.model)) s += `<span>the model matches it <b>${pc(mod)}</b></span>`;
-  $('#score').innerHTML = s;
+  const n = tally.you.length;
+  const rows = [['you','--you',tally.you],['the room','--room',tally.room]];
+  if (hasModel) rows.push(['the model','--script',tally.model]);
+  $('#sb').innerHTML = rows.map(([nm,col,t]) => {
+    const hits = t.filter(Boolean).length, f = t.length ? hits/t.length : 0;
+    return `<div class="sbrow"><span class="nm"><i class="dot" style="background:var(${col})"></i>${nm}</span>
+      <span class="track"><i style="width:${f*100}%;background:var(${col});opacity:.85"></i></span>
+      <span class="pct">${t.length ? pc(f) : '&mdash;'}</span></div>`;
+  }).join('');
+  $('#pips').innerHTML = !n ? '' : tally.you.map((_,i)=>
+    rows.map(([,,t]) => `<span class="pip ${t[i]===undefined?'':(t[i]?'h':'m')}"></span>`).join('')
+  ).join('<span style="width:8px"></span>');
+
+  if (!n) { $('#lead').innerHTML = 'Guess a clip to start the board.'; return; }
+  const sc = rows.map(([nm,,t]) => [nm, t.filter(Boolean).length]);
+  const best = Math.max(...sc.map(s=>s[1]));
+  const top = sc.filter(s=>s[1]===best).map(s=>s[0]);
+  $('#lead').innerHTML = `After <b>${n}</b> clip${n===1?'':'s'}: `
+    + sc.map(s=>`${s[0]} <b>${s[1]}/${n}</b>`).join(' &middot; ')
+    + ` &mdash; ${top.length>1 ? 'tied: '+top.join(' and ') : 'ahead: <b>'+top[0]+'</b>'}.`
+    + ` Each column of squares is one clip, top to bottom: ${rows.map(r=>r[0]).join(', ')}.`;
 }
+
+// the finding, off the full held-out split
+const F = D.finding;
+if (F) {
+  const d = F.n_diverged, s = F.n_model_script, r = F.n_model_crowd, x = F.n_model_neither;
+  $('#findingcard').innerHTML = `
+    <h2>The model is closer to the script than to the listeners</h2>
+    <p style="color:var(--dim);font-size:14px;margin:0 0 4px">Measured on all
+    ${F.n_test.toLocaleString()} clips from the ${F.n_actors} held-out actors, not on the
+    ${D.clips.length} above.</p>
+    <div class="big">
+      <div><div class="n s">${(100*F.acc_intended).toFixed(1)}%</div>
+        <div class="c">of the time the model's answer matches the emotion the actor was
+        <i>told</i> to perform.</div></div>
+      <div><div class="n r">${(100*F.acc_consensus).toFixed(1)}%</div>
+        <div class="c">of the time it matches what the crowd of listeners actually
+        reported hearing.</div></div>
+    </div>
+    <p style="margin:14px 0 0">On <b>${d.toLocaleString()}</b> of those clips
+    (${pc(1-F.crowd_vs_intended)}) the room's majority did not hear what the actor was told to
+    perform. That is the disagreement the benchmark hides. Here is whose side the model took:</p>
+    <div class="stack" id="stack">
+      <span style="width:0;background:var(--script)" data-w="${100*s/d}">${s}</span>
+      <span style="width:0;background:var(--room)" data-w="${100*r/d}">${r}</span>
+      <span style="width:0;background:#3a3f52;color:var(--fg)" data-w="${100*x/d}">${x}</span>
+    </div>
+    <div class="key">
+      <span><i style="background:var(--script)"></i>sided with the script (${s})</span>
+      <span><i style="background:var(--room)"></i>sided with the room (${r})</span>
+      <span><i style="background:#3a3f52"></i>neither (${x})</span>
+    </div>
+    <p style="margin:16px 0 0">When the script and the room disagreed, the model took the
+    script's side <b>${(s/r).toFixed(1)}&times;</b> as often as the room's. It is not learning
+    what listeners hear. It is learning what the recording session was aiming at &mdash; and
+    that is the thing a leaderboard number quietly reports as "emotion recognition".</p>
+    <p class="foot">${D.model.caveat} Split: actor-disjoint, seed ${D.model.seed},
+    ${D.model.n_test_clips.toLocaleString()} test clips from ${D.model.n_test_actors} actors
+    the model never trained on. Encoder ${'facebook/wav2vec2-base'}, trained against
+    <code>${D.model.trained_against}</code>. Every number on this page is read from
+    <code>modeling/runs/${D.model.tag}/</code>.</p>`;
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) {
+    e.target.querySelectorAll('span').forEach(s => s.style.width = s.dataset.w + '%');
+    io.disconnect(); } }), {threshold:.4});
+  io.observe($('#stack'));
+} else {
+  $('#findingcard').innerHTML = `<h2>No model yet</h2><p style="color:var(--dim);margin:0">
+    This page was built without a finished training run, so it shows no model answers.</p>`;
+}
+
+const S = D.stats;
+$('#stats').innerHTML = [
+  ['clips', S.n_clips.toLocaleString()],
+  ['crowd raters', S.n_raters.toLocaleString()],
+  ['actors', S.n_actors],
+  ["Krippendorff's &alpha;, audio only", S.alpha],
+  ['two random raters agree', pc(S.pairwise)],
+  ['crowd majority matches the actor&rsquo;s script', pc(S.consensus_vs_intended)],
+  ['reliability ceiling (10-rater consensus)', pc(S.ceiling)
+    + ` <span style="color:var(--dim)">[${pc(S.ceiling_ci[0])}&ndash;${pc(S.ceiling_ci[1])}]</span>`],
+].map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('');
+
+$('#method').innerHTML = `How the ${D.clips.length} clips above were chosen: all of them come from
+the held-out test actors, so no clip on this page was ever trained or validated on. Two per
+emotion &mdash; one where the crowd's majority matched the script and one where it did not &mdash;
+spanning the agreement range. Within that, the sample's model hit rate is matched to the model's
+hit rate on the full test split, so the page is not a highlight reel. Selection is deterministic;
+the rule lives in <code>web/build.py</code>.`;
 
 $('#play').onclick = play;
 $('#replay').onclick = play;
@@ -163,18 +343,6 @@ document.addEventListener('keydown', e => {
   if (e.key === ' ') { e.preventDefault(); play(); }
   if (e.key === 'Enter' && guess) { at++; load(); }
 });
-
-const S = D.stats;
-$('#stats').innerHTML = [
-  ['clips', S.n_clips.toLocaleString()],
-  ['crowd raters', S.n_raters.toLocaleString()],
-  ['actors', S.n_actors],
-  ["Krippendorff's &alpha;, audio only", S.alpha],
-  ['two random raters agree', Math.round(100*S.pairwise)+'%'],
-  ['crowd majority matches the actor&rsquo;s script', Math.round(100*S.consensus_vs_intended)+'%'],
-  ['reliability ceiling (10-rater consensus)', Math.round(100*S.ceiling)+'%'
-    + ` <span style="color:var(--dim)">[${Math.round(100*S.ceiling_ci[0])}&ndash;${Math.round(100*S.ceiling_ci[1])}]</span>`],
-].map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('');
 
 load(); scoreboard();
 </script></body></html>
