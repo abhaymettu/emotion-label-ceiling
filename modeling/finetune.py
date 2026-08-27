@@ -34,15 +34,30 @@ class Clips(Dataset):
         return load_wave(self.paths[i]), self.y[i], self.intended[i], self.cons[i]
 
 
-def collate(batch):
-    n = max(len(b[0]) for b in batch)
-    x = torch.zeros(len(batch), n)
-    m = torch.zeros(len(batch), n)
-    for i, (w, *_) in enumerate(batch):
-        x[i, :len(w)] = torch.from_numpy(w)
-        m[i, :len(w)] = 1
-    cols = [torch.tensor([b[j] for b in batch]) for j in (1, 2, 3)]
-    return (x, m, *cols)
+def make_collate(pad_to=None):
+    """pad_to=None pads each batch to its own longest clip. pad_to=MAX_SAMPLES pads every
+    batch to the same width.
+
+    This is not a cosmetic choice on MPS. Per-batch padding gives nearly every step a
+    unique tensor shape, and each new shape compiles a fresh MPSGraph that is then cached
+    forever. With wav2vec2-large the cache of 24-layer graphs grows until the machine
+    swaps: measured 0.90 s/step at step 40 and 19.48 s/step at step 100, a 20x collapse,
+    extrapolating to 199 min/epoch. Padding to one fixed width holds it flat at 0.95
+    s/step, 10 min/epoch. Fixed padding does change what the encoder attends over, so runs
+    with and without it are not comparable to each other -- hence the -fixpad tag."""
+    def collate(batch):
+        n = pad_to or max(len(b[0]) for b in batch)
+        x = torch.zeros(len(batch), n)
+        m = torch.zeros(len(batch), n)
+        for i, (w, *_) in enumerate(batch):
+            x[i, :len(w)] = torch.from_numpy(w)
+            m[i, :len(w)] = 1
+        cols = [torch.tensor([b[j] for b in batch]) for j in (1, 2, 3)]
+        return (x, m, *cols)
+    return collate
+
+
+collate = make_collate()
 
 
 class Model(nn.Module):
@@ -93,9 +108,12 @@ def main():
     ap.add_argument("--bs", type=int, default=8)
     ap.add_argument("--lr", type=float, default=3e-5)
     ap.add_argument("--head-lr", type=float, default=1e-3)
+    ap.add_argument("--pad", default="dynamic", choices=["dynamic", "fixed"],
+                    help="fixed pads every batch to MAX_SAMPLES; see make_collate")
     ap.add_argument("--tag", default=None)
     a = ap.parse_args()
-    tag = a.tag or f"{a.model.split('/')[-1]}-{a.label}-{a.split}-s{a.seed}"
+    suffix = "-fixpad" if a.pad == "fixed" else ""
+    tag = a.tag or f"{a.model.split('/')[-1]}-{a.label}-{a.split}{suffix}-s{a.seed}"
     out = ROOT / "modeling/runs" / tag
     out.mkdir(parents=True, exist_ok=True)
     torch.manual_seed(a.seed); np.random.seed(a.seed)
@@ -123,7 +141,8 @@ def main():
     # a hang. Reading the whole 4,906-clip epoch off disk costs ~2.5s, so workers bought
     # nothing anyway. Batch order is unaffected: the sampler runs in the main process.
     dl = {k: DataLoader(Clips(v, a.label), batch_size=a.bs, shuffle=(k == "train"),
-                        collate_fn=collate, num_workers=0)
+                        collate_fn=make_collate(MAX_SAMPLES if a.pad == "fixed" else None),
+                        num_workers=0)
           for k, v in f.items()}
     model = Model(a.model).to(dev)
     # record what encoder actually got built, so a config difference cannot hide
@@ -180,7 +199,7 @@ def main():
                 "krippendorff_alpha_audio": c["reliability"]["krippendorff_alpha_nominal"]}
 
     m = {"tag": tag, "n_test_clips": int(len(Y)), "n_test_actors": int(f["test"].actor_id.nunique()),
-         "n_seeds": 1, "seed": a.seed, "split": a.split, "trained_against": a.label,
+         "n_seeds": 1, "seed": a.seed, "split": a.split, "trained_against": a.label, "pad": a.pad,
          "best_val_acc": best,
          "test_acc_vs_intended": float((P == I).mean()),
          "test_acc_vs_audio_consensus": float((P == C).mean()),
