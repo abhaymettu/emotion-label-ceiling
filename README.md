@@ -116,11 +116,11 @@ Computed here, per modality, n = 7,442 clips:
 |---|---|---|---|
 | Krippendorff's α (nominal) | **0.265** [0.259, 0.272] | 0.447 [0.440, 0.454] | 0.486 [0.480, 0.493] |
 | Pairwise agreement between two raters | 0.455 | 0.546 | 0.579 |
-| Crowd majority reproduces the actor's intent | **0.440** | 0.683 | 0.743 |
+| Crowd majority reproduces the actor's intent | **0.440** | 0.682 | 0.743 |
 | Clips where the majority is a tie | 8.5% | 6.3% | 5.7% |
 
 The bottom row is a replication check. Cao et al. (2014) report 41% / 64% / 72% for
-the same quantity in their Table 7. We get 44.0 / 68.3 / 74.3 using a plain
+the same quantity in their Table 7. We get 44.0 / 68.2 / 74.3 using a plain
 tie-broken argmax where they used a binomial-majority rule that sets aside 8–13% of
 clips as ambiguous. Same numbers, and the small gap is the tie handling.
 
