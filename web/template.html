@@ -589,7 +589,10 @@ document.addEventListener('keydown', e => {
     e.preventDefault();
     const b = $('#choices').querySelectorAll('button')[n - 1];
     pick(b.dataset.e, b);
-  } else if (e.key === ' ') { e.preventDefault(); play(); }
+  } else if (e.key === ' ') {
+    if (t === 'BUTTON') return;      // let Space activate whatever is focused
+    e.preventDefault(); play();
+  }
   else if (e.key === 'Enter' && guess && t !== 'BUTTON') { at++; load(); }
 });
 
