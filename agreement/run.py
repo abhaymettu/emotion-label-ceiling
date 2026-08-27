@@ -315,6 +315,34 @@ def main():
             "pct_clips_consensus_differs_from_intended": float(differs.mean() * 100),
         }
 
+    # ---------- 5c. what the authors' published aggregation does to alpha ----------
+    # processFinishedResponses.R drops every response whose first emotion click
+    # took over 10 s (7,688 rows, 3.50%), and processedResults/*.csv -- the files
+    # nearly every CREMA-D benchmark is built from -- are computed on what is left.
+    # The filter is not mentioned in the dataset README. Dropping the slowest
+    # judgements is not neutral with respect to agreement, so measure it.
+    if "authors_excluded" in df.columns:
+        pub = df[~df.authors_excluded]
+        res["authors_published_filter"] = {"note": (
+            "processFinishedResponses.R excludes responses whose first emotion click took "
+            ">10s, matched on session/queryType/questNum against finishedEmoResponses.csv. "
+            "processedResults/tabulatedVotes.csv and summaryTable.csv -- the labels most "
+            "CREMA-D papers use -- are computed after this filter. It is undocumented in "
+            "the dataset README. data_ingest/validate_against_authors.py reproduces their "
+            "files exactly once it is applied."),
+            "n_excluded": int(df.authors_excluded.sum()),
+            "pct_excluded": float(df.authors_excluded.mean() * 100)}
+        for m in MODALITIES:
+            N, _ = counts_matrix(pub[pub.presented_modality == m], ["clip_id"],
+                                 "response_emotion", EMOTIONS)
+            a_pub = ci(N, reps)
+            res["authors_published_filter"][m] = {
+                "alpha_published_subset": a_pub["alpha"], "ci95": a_pub["ci95"],
+                "n_ratings": a_pub["n_ratings"],
+                "alpha_all_responses": res["alpha_by_modality"][m]["alpha"],
+                "inflation": a_pub["alpha"] - res["alpha_by_modality"][m]["alpha"],
+            }
+
     # ---------- 6. per-rater reliability ----------
     r = per_rater(df)
     OUT.mkdir(parents=True, exist_ok=True)

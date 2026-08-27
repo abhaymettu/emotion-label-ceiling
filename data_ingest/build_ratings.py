@@ -62,6 +62,20 @@ def build():
     )
     n_raw = len(resp)
 
+    # The authors' published aggregation (processedResults/*.csv) is NOT computed
+    # over all responses. processFinishedResponses.R silently drops every response
+    # whose FIRST emotion click took more than 10 s, matched on
+    # sessionNums*1000 + queryType*100 + questNum. That is 7,688 responses (3.5%),
+    # and it is not mentioned in the dataset README. Flagging it here rather than
+    # applying it: reproducing their subset is a one-line filter, and it is worth
+    # knowing that the widely-used CREMA-D labels exclude the slowest judgements.
+    emo = pd.read_csv(RAW / "finishedEmoResponses.csv", index_col=0, low_memory=False)
+    emo_ttr = pd.to_numeric(emo.ttr, errors="coerce")
+    slow_keys = set((emo.sessionNums * 1000 + emo.queryType * 100 + emo.questNum)[emo_ttr > 10_000])
+    resp_key = (resp.sessionNums.astype(int) * 1000 + resp.queryType.astype(int) * 100
+                + resp.questNum.astype(int))
+    authors_excluded = resp_key.isin(slow_keys)
+
     demo = pd.read_csv(RAW / "VideoDemographics.csv")
     sentences = pd.read_csv(RAW / "SentenceFilenames.csv")
 
@@ -81,6 +95,9 @@ def build():
         "ans_field_matches_respEmo": int((resp.ans.str.split("_").str[0] != resp.respEmo).sum()),
         "dispVal_missing": int(resp.dispVal.isna().sum()),
         "subType_all_4": bool((resp.subType == "4").all()),
+        "authors_excluded_rows": int(authors_excluded.sum()),
+        "authors_excluded_pct": round(float(authors_excluded.mean()) * 100, 3),
+        "authors_kept_rows": int((~authors_excluded).sum()),
     }
 
     df = pd.DataFrame({
@@ -98,6 +115,7 @@ def build():
         "session_num": resp.sessionNums.astype(int),
         "question_num": resp.questNum.astype(int),
         "log_pos": resp.pos.astype(int),
+        "authors_excluded": authors_excluded.to_numpy(),
     })
 
     # 3 rows carry a letter where the 0-100 intensity slider value should be
@@ -141,6 +159,7 @@ def build():
         "intended_emotion", "intended_intensity", "actor_id", "actor_sex", "actor_age",
         "actor_race", "actor_ethnicity", "sentence_id",
         "response_time_ms", "num_tries", "session_num", "question_num", "log_pos",
+        "authors_excluded",
     ]].sort_values(["clip_id", "presented_modality", "rater_id"]).reset_index(drop=True)
 
     for col in ["presented_modality", "response_emotion", "intended_emotion", "intended_intensity",
@@ -271,6 +290,11 @@ def selfcheck(df, clips):
     assert back.intended_emotion.isin(EMOTIONS).all()
     iv = back.response_intensity.dropna()
     assert iv.between(1, 100).all(), (iv.min(), iv.max())
+    # The authors' own tabulation totals 212,000 votes. We land one short because
+    # they do not de-duplicate and one of the two duplicate rows we drop survived
+    # their 10 s filter. validate_against_authors.py reproduces their 212,000
+    # exactly off the raw CSV and checks all 22,326 cells.
+    assert int((~back.authors_excluded).sum()) == 211_999, int((~back.authors_excluded).sum())
     print("selfcheck: OK")
 
 

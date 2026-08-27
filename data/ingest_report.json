@@ -48,7 +48,10 @@
     "dispLevel_matches_filename": 0,
     "ans_field_matches_respEmo": 0,
     "dispVal_missing": 540,
-    "subType_all_4": true
+    "subType_all_4": true,
+    "authors_excluded_rows": 7688,
+    "authors_excluded_pct": 3.5,
+    "authors_kept_rows": 212000
   },
   "drops": [
     {

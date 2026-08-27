@@ -41,6 +41,7 @@ every clip rated in all three conditions.
 | `session_num` | int | `sessionNums` | Rating session. Effectively 1:1 with `rater_id`. |
 | `question_num` | int | `questNum` | Position within that modality block, 1-30. |
 | `log_pos` | int | `pos` | Raw log order for that participant. Kept only to make duplicate resolution auditable. |
+| `authors_excluded` | bool | derived | True on the 7,687 rows (3.50%) that CREMA-D's own R pipeline throws away before publishing its vote tables. See below. |
 
 Columns past `sentence_id` are extras beyond `CONTRACT.md`; the contract columns are all present and named as specified.
 
@@ -74,6 +75,30 @@ Nothing else was dropped. No row was dropped for a missing field.
 (20/50/80)". In the actual file it is the other way round: `dispVal` holds
 20/50/80 and `dispLevel` holds `L/M/H/X`. We follow the data, and we cross-check
 both against the filename.
+
+## The authors' published vote tables exclude 3.5% of responses, undocumented
+
+`processFinishedResponses.R` drops every response whose **first emotion click
+took over 10 seconds**, matched on `sessionNums*1000 + queryType*100 + questNum`
+against `finishedEmoResponses.csv`. 7,687 of 219,688 responses. Nothing in the
+dataset README says so, and `processedResults/tabulatedVotes.csv` and
+`summaryTable.csv` — the labels most published CREMA-D work scores against —
+are computed after it.
+
+We do not apply it. `ratings_long.parquet` flags it as `authors_excluded` so
+either subset is one filter away, and
+
+    .venv/bin/python data_ingest/validate_against_authors.py
+
+reproduces **all 22,326 of their vote-count cells and all three majority-vote
+columns exactly**, on 212,000 votes, once the filter is applied. That is an
+independent check of this whole ingest against the authors' own R code, and it
+is how the filter was found: without it, 6,131 cells disagree, always with fewer
+votes on their side.
+
+The dropped responses are not spread evenly — audio-only loses 6.40% against
+2.1% and 2.0% for the other conditions. See `agreement/README.md` for what that
+does to alpha (it raises it, by 0.016 on audio-only).
 
 ## Reconciliation against the dataset's own published counts
 

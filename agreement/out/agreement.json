@@ -952,6 +952,41 @@
       "pct_clips_consensus_differs_from_intended": 25.208277344799786
     }
   },
+  "authors_published_filter": {
+    "note": "processFinishedResponses.R excludes responses whose first emotion click took >10s, matched on session/queryType/questNum against finishedEmoResponses.csv. processedResults/tabulatedVotes.csv and summaryTable.csv -- the labels most CREMA-D papers use -- are computed after this filter. It is undocumented in the dataset README. data_ingest/validate_against_authors.py reproduces their files exactly once it is applied.",
+    "n_excluded": 7687,
+    "pct_excluded": 3.499085057764263,
+    "audio": {
+      "alpha_published_subset": 0.2811032402126733,
+      "ci95": [
+        0.27418203548196834,
+        0.28763427876016995
+      ],
+      "n_ratings": 68568,
+      "alpha_all_responses": 0.26548006157770576,
+      "inflation": 0.015623178634967538
+    },
+    "visual": {
+      "alpha_published_subset": 0.45824001001284154,
+      "ci95": [
+        0.4511929572237941,
+        0.46533987226794643
+      ],
+      "n_ratings": 71653,
+      "alpha_all_responses": 0.44733887927104377,
+      "inflation": 0.010901130741797771
+    },
+    "audiovisual": {
+      "alpha_published_subset": 0.49666944404456315,
+      "ci95": [
+        0.48973860367276706,
+        0.5034630924203121
+      ],
+      "n_ratings": 71778,
+      "alpha_all_responses": 0.4864628998216355,
+      "inflation": 0.01020654422292766
+    }
+  },
   "per_rater": {
     "note": "agreement with the leave-one-out consensus of the other raters on the same clip-modality cell; ties split proportionally. 'at chance' = fails a one-sided exact binomial test against that rater's own expected match rate under marginal-matched random responding, at BH q<0.05 across all raters.",
     "n_raters": 2443,

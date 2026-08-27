@@ -148,6 +148,43 @@ all, and one in twelve is a tie broken arbitrarily. The consensus label — the
 thing benchmarks report accuracy against — disagrees with what the actor was
 told to portray on **more than half** the corpus.
 
+## The published CREMA-D labels are computed on a filtered subset
+
+Nearly every CREMA-D benchmark builds its labels from
+`processedResults/tabulatedVotes.csv` or `summaryTable.csv`. Those files do not
+tabulate all 219,688 responses. `processFinishedResponses.R` drops every response
+whose **first emotion click took longer than 10 seconds** — 7,687 responses,
+3.50% — and the dataset README never mentions it.
+
+We only found it by trying to reproduce their files and failing: 6,131 of 22,326
+cells disagreed, always with fewer votes on their side. With the filter applied,
+`data_ingest/validate_against_authors.py` reproduces **all 22,326 vote-count
+cells and all three majority-vote columns exactly**, on 212,000 votes. That is
+the strongest check in this repo, and it is also how the filter got found.
+
+The filter is not neutral. It removes the slowest judgements, and it removes
+them unevenly:
+
+| condition | responses dropped | share | alpha, all responses | alpha, published subset |
+|---|---|---|---|---|
+| audio only | 4,685 | **6.40%** | 0.2655 | **0.2811** (+0.016) |
+| visual only | 1,538 | 2.10% | 0.4473 | 0.4582 (+0.011) |
+| audiovisual | 1,464 | 2.00% | 0.4865 | 0.4967 (+0.010) |
+
+The audio-only condition — the one speech benchmarks use — loses three times as
+large a share as the other two, because that is the condition raters find hard
+enough to deliberate over. Median response time among dropped responses is
+17.9 s against 4.3 s among kept ones.
+
+**Calibrate the size honestly: +0.016 on audio-only alpha.** That is real,
+systematic, and in the flattering direction, but it is not where the problem
+lives. Alpha is 0.27 either way. The finding is not "the filter caused this",
+it is that the corpus's headline labels come from an undocumented subset, and
+nobody scoring against them appears to know.
+
+`ratings_long.parquet` carries this as the `authors_excluded` column rather than
+applying it, so either subset is one filter away.
+
 ## Per-rater reliability
 
 Each rating is scored against the **leave-one-out** consensus of the other raters
