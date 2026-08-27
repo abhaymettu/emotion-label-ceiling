@@ -1,0 +1,34 @@
+id,first_author,year,system,modality,metric,value,n_classes,protocol,speaker_independent,label_target,primary_verified,url,note
+S1,Koo,2026,Koo et al.,audiovisual,accuracy,89.49,6,EmoBox speaker-independent train/val split,yes,unspecified,yes,https://arxiv.org/abs/2603.11095,preprint not peer reviewed; EmoBox partition differs from the 5-fold SI CV used by S3/S5
+S2,Lei,2023,Lei & Cao preference learning,audiovisual,accuracy,85.06,6,not stated in abstract,unknown,both intended and perceived,abstract only,https://doi.org/10.1109/TAFFC.2023.3234777,trains on perceived-label information; the one paper built around the intended/perceived split
+S3,Sun,2024,HiCMAE-B,audiovisual,WAR,84.89,6,5-fold CV subject-independent,yes,unspecified,yes,https://arxiv.org/abs/2401.05698,UAR 84.91
+S4,Mocanu,2023,Mocanu et al.,audiovisual,accuracy,84.57,6,not verified,unknown,unspecified,no,https://doi.org/10.1016/j.imavis.2023.104676,read from Koo et al. comparison table; paywalled
+S5,Shi,2024,DE-III,audiovisual,F1-micro,83.70,6,5 folds non-overlapping actor identities,yes,unspecified,yes,https://arxiv.org/abs/2405.16701,F1-macro 79.5; F1-micro equals accuracy for single-label multiclass
+S6,Goncalves,2025,VAVL,audiovisual,F1-micro,82.60,6,70/15/15 speaker-independent x5 runs,yes,consensus (audiovisual perceived),yes,https://arxiv.org/abs/2305.07216,"0.826 +/- .015; F1-macro 0.779 +/- .025. The ONLY paper we could verify scores against the crowd majority label."
+S7,Sadok,2023,VQ-MAE-AV,audiovisual,accuracy,80.40,6,10-fold CV speaker-disjoint,yes,unspecified,yes,https://arxiv.org/abs/2305.03568,F1 80.00
+S8,Ghaleb,2019,AV-Gating,audiovisual,WAR,74.00,6,not verified,unknown,unspecified,no,https://doi.org/10.1109/ACII.2019.8925444,reported identically by four independent secondary tables; AV-LSTM 72.90
+S9,Dhanith,2024,AVT-CA,audiovisual,accuracy,94.13,6,80/20 random split no actor constraint,no,unspecified,yes,https://arxiv.org/abs/2407.18552,"LEAKY: 91 actors x 12 fixed sentences with a random split puts the same actor and sentence on both sides. Not comparable."
+S10,Sun,2024,HiCMAE-B (4-class subset),audiovisual,WAR,94.13,4,last fold only subject-independent,yes,unspecified,yes,https://arxiv.org/abs/2401.05698,"4 classes on 4896 clips; not comparable to 6-class rows. Same digits as S9 by coincidence."
+S11,Sun,2023,MAE-DFER,visual,UAR,77.33,6,5-fold CV subject-independent,yes,unspecified,yes,https://arxiv.org/abs/2307.02227,WAR 77.38
+S12,Sun,2024,SVFAP-B,visual,UAR,77.31,6,5-fold subject-independent CV,yes,unspecified,yes,https://arxiv.org/abs/2401.00416,WAR 77.37
+S13,Sun,2024,HiCMAE-B,visual,UAR,77.25,6,5-fold CV subject-independent,yes,unspecified,yes,https://arxiv.org/abs/2401.05698,WAR 77.21
+S14,Ma,2024,EmoBox Whisper large v3,audio,UA,76.75,6,4-fold leave-speakers-out CV,yes,unspecified,yes,https://arxiv.org/abs/2406.07162,WA 76.48 F1 76.60
+S15,Ma,2024,EmoBox WavLM large,audio,UA,74.50,6,4-fold leave-speakers-out CV,yes,unspecified,yes,https://arxiv.org/abs/2406.07162,WA 74.32 F1 74.39
+S16,Ma,2024,EmoBox HuBERT large,audio,UA,73.83,6,4-fold leave-speakers-out CV,yes,unspecified,yes,https://arxiv.org/abs/2406.07162,WA 73.64 F1 73.73
+S17,Sun,2024,WavLM-Plus (re-run in HiCMAE),audio,UAR,73.34,6,5-fold CV subject-independent,yes,unspecified,yes,https://arxiv.org/abs/2401.05698,WAR 73.39
+S18,Ma,2024,EmoBox HuBERT base,audio,UA,71.13,6,4-fold leave-speakers-out CV,yes,unspecified,yes,https://arxiv.org/abs/2406.07162,WA 70.98 F1 71.00
+S19,Sun,2024,HiCMAE-B,audio,UAR,71.11,6,5-fold CV subject-independent,yes,unspecified,yes,https://arxiv.org/abs/2401.05698,WAR 71.01
+S20,Ma,2024,EmoBox WavLM base,audio,UA,69.64,6,4-fold leave-speakers-out CV,yes,unspecified,yes,https://arxiv.org/abs/2406.07162,WA 69.49 F1 69.54
+S21,Ma,2024,EmoBox data2vec 2.0 large,audio,UA,69.55,6,4-fold leave-speakers-out CV,yes,unspecified,yes,https://arxiv.org/abs/2406.07162,WA 69.27 F1 69.25
+S22,Ma,2024,EmoBox data2vec 2.0 base,audio,UA,65.74,6,4-fold leave-speakers-out CV,yes,unspecified,yes,https://arxiv.org/abs/2406.07162,WA 65.48 F1 65.47
+S23,ChetiaPhukan,2023,x-vector + FCN,audio,accuracy,65.80,6,85:15 split speaker independence never claimed,no,unspecified,yes,https://arxiv.org/abs/2304.11472,"x-vectors are trained to encode speaker identity; split not actor-disjoint. Not comparable."
+S24,Ma,2024,EmoBox data2vec large,audio,UA,63.80,6,4-fold leave-speakers-out CV,yes,unspecified,yes,https://arxiv.org/abs/2406.07162,WA 63.51 F1 63.48
+S25,Ma,2024,EmoBox wav2vec 2.0 base,audio,UA,61.95,6,4-fold leave-speakers-out CV,yes,unspecified,yes,https://arxiv.org/abs/2406.07162,WA 61.90 F1 61.75
+S26,Ma,2024,EmoBox data2vec base,audio,UA,58.03,6,4-fold leave-speakers-out CV,yes,unspecified,yes,https://arxiv.org/abs/2406.07162,WA 57.78 F1 57.73
+H1,Cao,2014,human individual rater,audio,accuracy vs intended,40.90,6,"2443 raters, ~10 ratings/clip",n/a,intended,yes,https://pmc.ncbi.nlm.nih.gov/articles/PMC4313618/,"verbatim: ""human recognition of intended emotion for the audio-only, visual-only, and audio-visual data are 40.9%, 58.2% and 63.6%"""
+H2,Cao,2014,human individual rater,visual,accuracy vs intended,58.20,6,"2443 raters, ~10 ratings/clip",n/a,intended,yes,https://pmc.ncbi.nlm.nih.gov/articles/PMC4313618/,same sentence as H1
+H3,Cao,2014,human individual rater,audiovisual,accuracy vs intended,63.60,6,"2443 raters, ~10 ratings/clip",n/a,intended,yes,https://pmc.ncbi.nlm.nih.gov/articles/PMC4313618/,same sentence as H1
+H4,Cao,2014,crowd binomial majority,audio,accuracy vs intended,41.00,6,Table 7 binomial-majority; 13% ambiguous excluded,n/a,intended,yes,https://pmc.ncbi.nlm.nih.gov/articles/PMC4313618/,"Table 7: 41% matching / 46% non-matching / 13% ambiguous"
+H5,Cao,2014,crowd binomial majority,visual,accuracy vs intended,64.00,6,Table 7 binomial-majority; 11% ambiguous excluded,n/a,intended,yes,https://pmc.ncbi.nlm.nih.gov/articles/PMC4313618/,"Table 7: 64% / 25% / 11%"
+H6,Cao,2014,crowd binomial majority,audiovisual,accuracy vs intended,72.00,6,Table 7 binomial-majority; 8% ambiguous excluded,n/a,intended,yes,https://pmc.ncbi.nlm.nih.gov/articles/PMC4313618/,"Table 7: 72% / 21% / 8%"
+H7,Cao,2014,intra-rater self-consistency,audio,test-retest agreement,62.60,6,repeated clips within rater,n/a,own earlier response,yes,https://pmc.ncbi.nlm.nih.gov/articles/PMC4313618/,"Table 9; chance stated as 16%. visual 69.1%, AV 76.4%, overall 69.4%"
