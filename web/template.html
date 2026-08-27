@@ -69,7 +69,7 @@ color:var(--dim);margin-bottom:6px}
 .track{height:26px;border-radius:8px;background:#20242f;position:relative;overflow:hidden}
 .track i{display:block;height:100%;border-radius:8px;transition:width .6s cubic-bezier(.2,.8,.2,1)}
 .pct{text-align:right;font-variant-numeric:tabular-nums;font-size:15px;font-weight:600}
-.pips{display:flex;gap:4px;margin-top:14px;flex-wrap:wrap}
+.pips{display:grid;grid-auto-flow:column;grid-auto-columns:16px;gap:4px;margin-top:16px;overflow-x:auto;padding-bottom:4px}
 .pip{width:16px;height:16px;border-radius:5px;border:1px solid var(--line);background:#20242f}
 .pip.h{background:#3f9e6b;border-color:#3f9e6b}
 .pip.m{background:#4a2731;border-color:#7d3a4c}
@@ -230,6 +230,11 @@ function pick(e, btn){
     call = `<div class="call"><span class="lede">even the easy ones split</span>
       The room's majority matched the script, but <b>${c.n - iv}</b> of ${c.n} listeners still
       heard something else.</div>`;
+  } else {
+    call = `<div class="call"><span class="lede">unanimous</span>
+      All <b>${c.n}</b> listeners said <b>${c.intended}</b>. Clips this clean are the exception:
+      across the whole dataset two raters picked the same label only
+      ${pc(D.stats.pairwise)} of the time.</div>`;
   }
   $('#call').innerHTML = call;
 
@@ -256,9 +261,11 @@ function scoreboard(){
       <span class="track"><i style="width:${f*100}%;background:var(${col});opacity:.85"></i></span>
       <span class="pct">${t.length ? pc(f) : '&mdash;'}</span></div>`;
   }).join('');
-  $('#pips').innerHTML = !n ? '' : tally.you.map((_,i)=>
-    rows.map(([,,t]) => `<span class="pip ${t[i]===undefined?'':(t[i]?'h':'m')}"></span>`).join('')
-  ).join('<span style="width:8px"></span>');
+  $('#pips').style.gridTemplateRows = `repeat(${rows.length},16px)`;
+  $('#pips').innerHTML = !n ? '' : tally.you.map((_,i) =>
+    rows.map(([nm,,t]) => `<span class="pip ${t[i]===undefined?'':(t[i]?'h':'m')}"
+      title="clip ${i+1}, ${nm}: ${t[i]?'matched the script':'missed'}"></span>`).join('')
+  ).join('');
 
   if (!n) { $('#lead').innerHTML = 'Guess a clip to start the board.'; return; }
   const sc = rows.map(([nm,,t]) => [nm, t.filter(Boolean).length]);
@@ -267,7 +274,7 @@ function scoreboard(){
   $('#lead').innerHTML = `After <b>${n}</b> clip${n===1?'':'s'}: `
     + sc.map(s=>`${s[0]} <b>${s[1]}/${n}</b>`).join(' &middot; ')
     + ` &mdash; ${top.length>1 ? 'tied: '+top.join(' and ') : 'ahead: <b>'+top[0]+'</b>'}.`
-    + ` Each column of squares is one clip, top to bottom: ${rows.map(r=>r[0]).join(', ')}.`;
+    + ` One column of squares per clip, in the order above: ${rows.map(r=>r[0]).join(', ')}.`;
 }
 
 // the finding, off the full held-out split
@@ -288,7 +295,7 @@ if (F) {
         reported hearing.</div></div>
     </div>
     <p style="margin:14px 0 0">On <b>${d.toLocaleString()}</b> of those clips
-    (${pc(1-F.crowd_vs_intended)}) the room's majority did not hear what the actor was told to
+    (${(100*(1-F.crowd_vs_intended)).toFixed(1)}%) the room's majority did not hear what the actor was told to
     perform. That is the disagreement the benchmark hides. Here is whose side the model took:</p>
     <div class="stack" id="stack">
       <span style="width:0;background:var(--script)" data-w="${100*s/d}">${s}</span>
