@@ -20,6 +20,10 @@ def load():
             continue
         cfg = json.load(open(p.parent / "config.json"))
         m["model"] = cfg["model"].split("/")[-1]
+        # padding regime is NOT comparable across groups -- fixed padding changes what the
+        # encoder attends over. Never average a dynamic run together with a fixed one.
+        m["pad"] = m.get("pad", cfg.get("pad", "dynamic"))
+        m["group"] = f"{m['model']} ({m['pad']} pad)"
         runs.append(m)
     return runs
 
@@ -39,14 +43,14 @@ def main():
         sys.exit("no finished actor-disjoint intent runs found")
     ceil = next((r["ceiling_context"]["audio_ceiling_panel10"]["estimate"]
                  for r in runs if r.get("ceiling_context")), None)
-    models = sorted({r["model"] for r in runs},
-                    key=lambda m: (0 if m.endswith("base") else 1, m))
+    models = sorted({r["group"] for r in runs},
+                    key=lambda g: (g.split(" (")[1], 0 if "base" in g else 1, g))
 
     print("## Per seed\n")
     print("| model | seed | n test clips | vs intended | vs audio consensus | gap (pts) |")
     print("|---|---|---|---|---|---|")
     for mo in models:
-        for r in sorted([x for x in runs if x["model"] == mo], key=lambda x: x["seed"]):
+        for r in sorted([x for x in runs if x["group"] == mo], key=lambda x: x["seed"]):
             i, c = r["test_acc_vs_intended"], r["test_acc_vs_audio_consensus"]
             print(f"| {mo} | {r['seed']} | {r['n_test_clips']} | {i:.4f} | {c:.4f} | {100*(i-c):.1f} |")
 
@@ -56,7 +60,7 @@ def main():
     print("|---|---|---|---|---|---|")
     summ = {}
     for mo in models:
-        rs = [x for x in runs if x["model"] == mo]
+        rs = [x for x in runs if x["group"] == mo]
         mi, si = ms([r["test_acc_vs_intended"] for r in rs])
         mc, sc = ms([r["test_acc_vs_audio_consensus"] for r in rs])
         summ[mo] = (mi, si, mc, sc, len(rs))
@@ -64,8 +68,13 @@ def main():
         print(f"| {mo} | {len(rs)} | {fmt(mi)} ± {fmt(si)} | {fmt(mc)} ± {fmt(sc)} "
               f"| {100*(mi-mc):.1f} | {hd} |")
 
-    if len(models) >= 2:
-        b, l = models[0], models[-1]
+    pads = {}
+    for mo in models:
+        pads.setdefault(mo.split(" (")[1], []).append(mo)
+    for pad, group in pads.items():
+        if len(group) < 2:
+            continue
+        b, l = group[0], group[-1]
         mi_b, _, mc_b, _, nb = summ[b]
         mi_l, _, mc_l, _, nl = summ[l]
         print(f"\n**{l} minus {b}:** intended {100*(mi_l-mi_b):+.1f} pts, "
@@ -79,7 +88,7 @@ def main():
     for e in EMOTIONS:
         cells = []
         for mo in models:
-            rs = [x for x in runs if x["model"] == mo]
+            rs = [x for x in runs if x["group"] == mo]
             pr = [r["per_class_vs_audio_consensus"][e]["precision"] for r in rs]
             rc = [r["per_class_vs_audio_consensus"][e]["recall"] for r in rs]
             pr = [v for v in pr if v is not None]; rc = [v for v in rc if v is not None]
@@ -92,7 +101,7 @@ def main():
     for e in EMOTIONS:
         cells = []
         for mo in models:
-            rs = [x for x in runs if x["model"] == mo]
+            rs = [x for x in runs if x["group"] == mo]
             pr = [r["per_class_vs_intended"][e]["precision"] for r in rs]
             rc = [r["per_class_vs_intended"][e]["recall"] for r in rs]
             pr = [v for v in pr if v is not None]; rc = [v for v in rc if v is not None]
@@ -100,7 +109,7 @@ def main():
         print(f"| {e} | " + " | ".join(cells) + " |")
 
     for mo in models:
-        n = len([x for x in runs if x["model"] == mo])
+        n = len([x for x in runs if x["group"] == mo])
         if n < 2:
             print(f"\n> {mo}: n={n} run. One run is not a result -- no spread is claimed.")
 
