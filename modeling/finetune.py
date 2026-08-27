@@ -122,6 +122,17 @@ def main():
                         collate_fn=collate, num_workers=4, persistent_workers=True)
           for k, v in f.items()}
     model = Model(a.model).to(dev)
+    # record what encoder actually got built, so a config difference cannot hide
+    ec = model.enc.config
+    cfg = json.load(open(out / "config.json"))
+    cfg["encoder"] = {"hidden_size": ec.hidden_size, "num_hidden_layers": ec.num_hidden_layers,
+                      "num_attention_heads": ec.num_attention_heads, "layerdrop": ec.layerdrop,
+                      "hidden_dropout": ec.hidden_dropout, "mask_time_prob": ec.mask_time_prob,
+                      "do_stable_layer_norm": ec.do_stable_layer_norm,
+                      "feat_extract_norm": ec.feat_extract_norm,
+                      "enc_params": sum(p.numel() for p in model.enc.parameters()),
+                      "total_params": sum(p.numel() for p in model.parameters())}
+    json.dump(cfg, open(out / "config.json", "w"), indent=2)
     opt = torch.optim.AdamW([{"params": model.enc.parameters(), "lr": a.lr},
                              {"params": model.head.parameters(), "lr": a.head_lr}])
     sched = torch.optim.lr_scheduler.OneCycleLR(
