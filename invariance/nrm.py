@@ -398,15 +398,57 @@ def self_check() -> int:
     return 0
 
 
-def mirt_fixture(path: Path, n_r=1200):
-    """Write a balanced one-response-per-item NRM dataset for the mirt cross-check."""
+def mirt_check(n_r=4000) -> int:
+    """Independent-implementation check: fit the same NRM here and in R's mirt.
+
+    Balanced one-response-per-item fixture (the classic NRM design mirt expects),
+    then compare fitted category response curves. mirt's default nominal itemtype
+    is a *restricted* NRM; mirt_check.R frees the top-category slope so both fit
+    Bock's general model. Skipped with a clear message if Rscript/mirt are absent.
+    """
+    import shutil
+    import subprocess
+
+    OUT.mkdir(parents=True, exist_ok=True)
+    csv = OUT / "mirt_fixture.csv"
     rng = np.random.default_rng(7)
-    counts, grp, A, C, *_ = _simulate(rng, n_r=n_r, n_rep=1, groups=False)
-    resp = counts.argmax(axis=2)
-    pd.DataFrame(resp, columns=EMOTIONS).to_csv(path, index=False)
-    f = fit_nrm(counts, np.zeros(n_r, int))
-    np.savez(path.with_suffix(".npz"), A=f["A"][0], C=f["C"][0], A_true=A, C_true=C)
-    print(f"wrote {path} and {path.with_suffix('.npz')}")
+    counts, _, A, C, *_ = _simulate(rng, n_r=n_r, n_rep=1, groups=False)
+    pd.DataFrame(counts.argmax(axis=2), columns=EMOTIONS).to_csv(csv, index=False)
+    f = fit_nrm(counts, np.zeros(n_r, int), maxit=800, tol=1e-9)
+
+    if not shutil.which("Rscript"):
+        print("Rscript not found; cross-check skipped (not a failure, but the "
+              "independent-implementation check did not run)", file=sys.stderr)
+        return 0
+    r = subprocess.run(["Rscript", str(ROOT / "invariance" / "mirt_check.R"), str(csv)],
+                       capture_output=True, text=True, cwd=ROOT)
+    if r.returncode != 0:
+        print(r.stderr, file=sys.stderr)
+        print("mirt cross-check could not run (is the R package `mirt` installed?)",
+              file=sys.stderr)
+        return 0
+    ll_mirt = float(r.stdout.split()[2])
+    x = np.linspace(-4, 4, 61)
+    mine = _probs(f["A"][0], f["C"][0], x)
+    theirs = (pd.read_csv(str(csv).replace(".csv", "_mirt_probs.csv"))
+              .to_numpy().reshape(len(x), K, K).transpose(1, 2, 0))
+    w = np.exp(-0.5 * x ** 2)
+    w /= w.sum()
+    d = np.abs(mine - theirs)
+    res = {
+        "n_persons": n_r, "n_items": K, "n_categories": K,
+        "loglik_nrm_py": round(f["loglik"], 3), "loglik_mirt": round(ll_mirt, 3),
+        "loglik_gap": round(f["loglik"] - ll_mirt, 3),
+        "max_abs_prob_diff_all_theta": round(float(d.max()), 6),
+        "max_abs_prob_diff_core_theta_2.5": round(float(d[:, :, np.abs(x) <= 2.5].max()), 6),
+        "density_weighted_mean_abs_prob_diff": round(float((d * w).sum() / (K * K)), 8),
+    }
+    (OUT / "nrm-mirt-crosscheck.json").write_text(json.dumps(res, indent=2))
+    assert abs(res["loglik_gap"]) < 1.0, f"loglik disagrees with mirt: {res}"
+    assert res["max_abs_prob_diff_all_theta"] < 0.05, f"curves disagree with mirt: {res}"
+    print("ok  matches R/mirt: loglik " f"{res['loglik_nrm_py']} vs {res['loglik_mirt']}, "
+          f"max |dP| = {res['max_abs_prob_diff_all_theta']:.4f} "
+          f"(density-weighted mean {res['density_weighted_mean_abs_prob_diff']:.2e})")
     return 0
 
 
@@ -423,12 +465,13 @@ def main() -> int:
                     help="comma-separated grouping vars to run LOO on")
     ap.add_argument("--loo-max", type=int, default=0, help="0 = every rater")
     ap.add_argument("--check", action="store_true")
-    ap.add_argument("--mirt-fixture", default=None)
+    ap.add_argument("--mirt-check", action="store_true",
+                    help="fit the same NRM in R/mirt and compare (needs Rscript + mirt)")
     a = ap.parse_args()
     if a.check:
         return self_check()
-    if a.mirt_fixture:
-        return mirt_fixture(Path(a.mirt_fixture))
+    if a.mirt_check:
+        return mirt_check()
 
     rng = np.random.default_rng(a.seed)
     df, meta = load(a.ratings)
