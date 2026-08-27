@@ -1,14 +1,79 @@
 # emotion-label-ceiling
 
-**On audio-only CREMA-D, the maximum accuracy any model can reach against the crowd
-consensus label is 72.7% (95% CI 72.3–73.2, n = 7,442 clips, 2,443 raters, median 10
-raters per clip). Four published speaker-independent results sit above it: 76.75,
-74.50, 73.83 and 73.34.**
+**One wav2vec2 fine-tune, one set of predictions, 1,640 held-out clips: 74.9% accurate
+against the emotion the actor was told to perform, 52.2% against what listeners actually
+heard. Same model, same audio, same predictions — 22.7 points of the result is nothing but
+the choice of label.**
 
-That is not automatically misconduct, and the rest of this repo is about why. The
-short version: almost nobody says which label they scored against, and if they scored
-against the actor's *intended* emotion rather than the crowd's, no such ceiling applies
-to them — but then their number cannot be compared to the 40.9% humans get.
+**And the listeners' own label has a ceiling. On audio-only CREMA-D, no model can exceed
+72.7% (95% CI 72.3–73.2, n = 7,442 clips, 2,443 raters, median 10 raters per clip) against
+the crowd consensus. Four published speaker-independent results sit above it: 76.75, 74.50,
+73.83 and 73.34. Twelve of the fourteen papers checked never say which of the two labels
+they scored.**
+
+---
+
+## The fine-tune
+
+`facebook/wav2vec2-base` + mean pool + linear head, trained on the **actor's intended
+emotion**, split by actor so no speaker appears on two sides: 60 actors train, 11 validate,
+20 test. 8 epochs, MPS, seed 0. Then the same predictions on the same 1,640 test clips are
+scored twice, once against each of CREMA-D's two labels.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="figures/03-intent-vs-heard-dark.png">
+  <img alt="Left: the same model scores 0.7488 against the actor's intended emotion and 0.5220 against the audio-only crowd consensus, a 22.7 point gap, both below the 0.727 consensus ceiling. Right: per class, the number of test clips shifts from the acted count to what the crowd actually heard — neutral 240 to 826, disgust 280 to 168, fear 280 to 170, happy 280 to 115, sad 280 to 97." src="figures/03-intent-vs-heard-light.png">
+</picture>
+
+| | value |
+|---|---|
+| test accuracy vs the actor's **intended** emotion | **0.7488** |
+| test accuracy vs the **audio-only crowd consensus** | **0.5220** |
+| gap | **22.7 points** |
+| best validation accuracy (vs intended) | 0.7422 |
+| test clips / held-out actors / seed | 1,640 / 20 / 0 |
+| audio consensus ceiling, for comparison | 0.727 [0.723, 0.732] |
+| headroom left to that ceiling | 0.205 |
+
+**The model does not cross the ceiling.** 0.522 is 20.5 points *below* 0.727. That matters
+for the argument in the other half of this repo: an honestly-built model that is genuinely
+good at the acted task lands nowhere near the consensus bound, which makes four published
+numbers sitting *above* that bound sharper, not weaker. Nothing here says the ceiling is
+easy to reach.
+
+### The classes are not the same classes
+
+The split is not uniform. Score against intent and the six classes are near-balanced by
+construction — 280 test clips each, 240 for neutral. Score against what the crowd heard from
+the same audio and the corpus reorganises itself:
+
+| class | clips, acted | clips, heard by the crowd | model precision vs the crowd label |
+|---|---|---|---|
+| neutral | 240 | **826** | 0.944 |
+| anger | 280 | 264 | 0.608 |
+| fear | 280 | 170 | 0.507 |
+| disgust | 280 | **168** | **0.370** |
+| happy | 280 | 115 | 0.409 |
+| sad | 280 | **97** | 0.211 |
+
+Half of the test set (50.4%) is *heard* as neutral where 14.6% was *performed* as neutral.
+The model's precision on crowd-labelled disgust is 0.370: when it calls a clip disgust —
+because the actor was performing disgust, and it learned to detect that — listeners heard
+disgust less than two times in five. On crowd-labelled sad it is 0.211.
+
+Read the other way, the one thing the model is precise about against the crowd label is
+neutral (0.944), and it is precise there because neutral is what a crowd falls back on when
+a voice carries no unambiguous signal. Its *recall* on crowd-neutral is only 0.344 — it does
+not say neutral often, because it was trained on a label where neutral is one class in six.
+
+This is the same result the annotation statistics show from the other end. **From voice
+alone the crowd majority reproduces the actor's intent on 44.0% of clips and disagrees on
+54.8%**, and for sad, happy, fear and disgust the plurality audio-only response is
+*neutral*, not the intended emotion. A model trained on intent learns what the actor **did**
+with their voice. That is a real, learnable acoustic thing. It is not what listeners
+**hear**.
+
+**Stated up front: this is one seed.** See [Limitations](#limitations).
 
 ---
 
@@ -30,18 +95,29 @@ generous relative to real speech.
 **There are two different labels in this dataset and papers rarely say which they
 used.** The filename encodes the intended emotion; `summaryTable.csv` ships separate
 crowd majority votes. The distinction decides whether a reliability ceiling applies
-at all.
+at all — and, as the fine-tune above shows, it is worth 22.7 points.
+
+The audio itself was pulled from an unofficial GitLab mirror, so it was checked against
+`github.com/CheyneyComputerScience/CREMA-D` rather than trusted: **all 7,442 git-lfs sha256
+digests match, and so do the sha256s of the 7,442 files actually on disk.** The mirror is
+missing `processedResults/` and carries one extra video file, neither of which is used here.
+Full check in [`data/README.md`](data/README.md).
 
 ## What the raters actually agree on
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="figures/01-modality-agreement-dark.png">
+  <img alt="Krippendorff's alpha is 0.265 for audio-only, 0.447 for visual-only and 0.486 for audiovisual, all far below the 0.667 tentative threshold. The crowd majority reproduces the actor's intent on 44.0%, 68.2% and 74.3% of clips respectively, against a 16.7% chance rate." src="figures/01-modality-agreement-light.png">
+</picture>
 
 Computed here, per modality, n = 7,442 clips:
 
 | | audio | visual | audiovisual |
 |---|---|---|---|
-| Krippendorff's α (nominal) | **0.266** | 0.447 | 0.487 |
+| Krippendorff's α (nominal) | **0.265** [0.259, 0.272] | 0.447 [0.440, 0.454] | 0.486 [0.480, 0.493] |
 | Pairwise agreement between two raters | 0.455 | 0.546 | 0.579 |
 | Crowd majority reproduces the actor's intent | **0.440** | 0.683 | 0.743 |
-| Clips where the majority is a tie | 8.6% | 6.3% | 5.7% |
+| Clips where the majority is a tie | 8.5% | 6.3% | 5.7% |
 
 The bottom row is a replication check. Cao et al. (2014) report 41% / 64% / 72% for
 the same quantity in their Table 7. We get 44.0 / 68.3 / 74.3 using a plain
@@ -50,6 +126,40 @@ clips as ambiguous. Same numbers, and the small gap is the tie handling.
 
 **From voice alone, a crowd of ten people recovers what the actor was told to
 perform 44% of the time.** Chance is 17%.
+
+Three more things fall out of the per-rater data, all in
+[`agreement/README.md`](agreement/README.md):
+
+- **The majority-vote label is thin.** Audio-only: 4.0% of clips unanimous, 21.1% with no
+  majority at all, 8.5% ties broken arbitrarily.
+- **You cannot clean your way out of it.** Only 10 of 2,443 raters (0.41%) fail a
+  BH-corrected binomial test against chance. Dropping all ten moves audio-only α from
+  0.2655 to 0.2677. Mean per-rater agreement with the leave-one-out consensus is 0.627
+  (sd 0.087) against a 0.207 chance expectation. **The raters are fine; the construct is
+  not.**
+- **The acted-is-optimistic framing is tested, not asserted.** Sentence IEO was recorded at
+  three directed intensities by all 91 actors, so the contrast is within-actor. Audio-only
+  α: **0.168 low → 0.266 medium → 0.348 high**, paired high − low = +0.179 [0.151, 0.210],
+  n = 455 clips per level. Exaggeration buys agreement. Even at maximum deliberate
+  exaggeration, α is 0.348.
+
+### The published vote tables quietly drop 3.5% of the responses
+
+CREMA-D's own `processFinishedResponses.R` excludes every response whose **first emotion
+click took over 10 seconds** — 7,687 of 219,688 responses — matched on
+`sessionNums*1000 + queryType*100 + questNum` against `finishedEmoResponses.csv`. Nothing in
+the dataset README says so, and `processedResults/tabulatedVotes.csv` and `summaryTable.csv`
+— the labels most published CREMA-D work scores against — are computed *after* it.
+
+The exclusion is not spread evenly: **audio-only loses 6.40% of its responses against 2.1%
+and 2.0% for the other two conditions.** It lifts audio-only α from 0.2655 to **0.2811**.
+Small, systematic, and flattering to exactly the condition this repo is about.
+
+We do not apply it. `ratings_long.parquet` carries it as an `authors_excluded` flag so
+either subset is one filter away. It was found by *failing* to reproduce the authors'
+tables: without the filter, 6,131 vote-count cells disagree, always with fewer votes on
+their side. With it, `data_ingest/validate_against_authors.py` reproduces **all 22,326 of
+their vote-count cells and all three majority-vote columns exactly**, on 212,000 votes.
 
 ## The ceiling
 
@@ -93,6 +203,11 @@ Every number in [`ceiling/sota.csv`](ceiling/sota.csv) was read out of the paper
 abstract or results table. Provenance, rejected numbers and the two values a search
 engine got wrong: [`ceiling/SOURCES.md`](ceiling/SOURCES.md).
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="figures/02-ceiling-vs-sota-dark.png">
+  <img alt="Audio-only: the ceiling is 72.7 percent with CI 72.3 to 73.2. EmoBox Whisper large v3 at 76.75, EmoBox WavLM large at 74.50, EmoBox HuBERT large at 73.83 and WavLM-Plus at 73.34 all sit above it, and all four state no label target. Eight further audio systems sit below. The human crowd majority sits at 41.0. Audiovisual: the ceiling is 82.8 with CI 82.4 to 83.3. Koo et al. at 89.49, HiCMAE-B at 84.89 and DE-III at 83.70 sit above with no stated label target, while VAVL — the one paper that states it scores against the crowd consensus — sits at 82.60, on the ceiling." src="figures/02-ceiling-vs-sota-light.png">
+</picture>
+
 **Audio-only, 6-class, speaker-independent splits. Ceiling = 0.727.**
 
 | system | reported | vs ceiling | source |
@@ -104,6 +219,7 @@ engine got wrong: [`ceiling/SOURCES.md`](ceiling/SOURCES.md).
 | EmoBox HuBERT base | 71.13 UA | −1.6 | [arXiv:2406.07162](https://arxiv.org/abs/2406.07162) |
 | HiCMAE-B (audio) | 71.11 UAR | −1.6 | [arXiv:2401.05698](https://arxiv.org/abs/2401.05698) |
 | EmoBox WavLM base | 69.64 UA | −3.1 | [arXiv:2406.07162](https://arxiv.org/abs/2406.07162) |
+| **this repo, wav2vec2-base scored vs consensus** | **52.20** | **−20.5** | `modeling/runs/…-s0/metrics.json` |
 | Cao et al. 2014, human crowd majority | 41.0 | −31.7 | [PMC4313618](https://pmc.ncbi.nlm.nih.gov/articles/PMC4313618/) |
 
 **Audiovisual. Ceiling = 0.828.** The single most informative row in this repo:
@@ -119,9 +235,6 @@ Everything reported above the audiovisual ceiling — 89.49, 85.06, 84.89, 84.57
 83.70 — is label-target **unspecified**. So is every audio number in the table above.
 Twelve of fourteen papers never say.
 
-**Visual-only. Ceiling = 0.797.** Published: 77.33, 77.31, 77.25. All below. No
-violation.
-
 ### What this does and does not show
 
 The honest reading, in order:
@@ -135,7 +248,11 @@ The honest reading, in order:
    they scored against consensus, the ceiling says the excess is not emotion.
    **We cannot tell which, and neither can a reader of those papers.** That is the
    actual finding: the benchmark does not record what it is measuring.
-3. **The interesting gap is not model-vs-ceiling, it is model-vs-human.** Machines
+3. **The fine-tune shows that this ambiguity is not a technicality.** Between the two
+   readings of "accuracy on CREMA-D audio" there are 22.7 points, on one model and one set
+   of predictions. A paper that does not state its label target has not reported a number a
+   reader can place.
+4. **The interesting gap is not model-vs-ceiling, it is model-vs-human.** Machines
    are reported at 76.5% audio against a target the entire human crowd reproduces
    41% of the time. Whatever those models are recovering from the waveform, it is
    not something ten listeners can hear.
@@ -165,6 +282,11 @@ each group gives.
 
 CREMA-D publishes no rater demographics, so groups are behavioural.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="figures/04-rater-invariance-dark.png">
+  <img alt="Left panel: DIF effect size on the worst emotion item is 0.004 for response speed, 0.005 for response-style extremity and 0.006 for session position, all ETS A negligible; the latent construal class reaches 0.018 (ETS B) and 0.032 ability-residualised (ETS C large). Right panel: transfer accuracy sits on the size-matched permutation null for all three behavioural groupings, but falls 6.3 points below it for the latent grouping and 4.8 points below when ability-residualised, both p below 0.005." src="figures/04-rater-invariance-light.png">
+</picture>
+
 **Audio-only, n = 73,253 trials, 2,443 raters. ΔR²(Nagelkerke), Jodoin & Gierl bands:**
 
 | grouping | worst item | ΔR² | J&G band | ETS | raw acc. gap |
@@ -172,15 +294,16 @@ CREMA-D publishes no rater demographics, so groups are behavioural.
 | response speed (fast / deliberate) | anger | 0.004 | negligible | A | +4.9 pts |
 | response-style extremity | neutral | 0.005 | negligible | A | −4.5 pts |
 | session position (early / late) | anger | 0.006 | negligible | A | +6.3 pts |
-| latent construal class, ability-residualised | **neutral** | **0.032** | negligible | **C (large)** | **+13.5 pts** |
+| latent construal class | sad | 0.018 | negligible | **B (moderate)** | — |
+| ↳ ability-residualised | **neutral** | **0.032** | negligible | **C (large)** | **+13.5 pts** |
 
 **On every manifest behavioural grouping, DIF is negligible.** Speed, response-style
 extremity and fatigue do not make the emotion items function differently. That is a
 negative result and it is not softened.
 
 The one grouping that does bite is latent: the first principal component of a rater's
-6×6 confusion profile, fitted on a random half of that rater's trials and tested on
-the held-out half so the grouping is not read off the trials it is tested on. Because
+6×6 confusion profile, fitted on a random half of that rater's trials and tested on the
+held-out half so the grouping is not read off the trials it is tested on. Because
 a confusion profile is partly just accuracy, we residualise it on the rater's own
 accuracy first — **and the effect gets stronger, not weaker**, so it is construal and
 not ability. ΔR² still lands in Jodoin-Gierl's "negligible" band while
@@ -220,14 +343,27 @@ which sees *which* wrong answer was given, not just whether it was wrong: **sad*
 
 Sad is worst on both. It is also the class where the crowd majority reproduces the
 actor's intent least often on audio (19.4%, n = 1,271 clips) against a per-class
-ceiling of 0.737. Sadness in voice is the weakest part of this benchmark by every
-measurement we made.
+ceiling of 0.737. And it is the class the fine-tuned model is least precise on against
+the crowd label (0.211, n = 97 clips actually heard as sad). Sadness in voice is the
+weakest part of this benchmark by every measurement made here.
 
 ## Limitations
 
+- **One seed.** The fine-tune headline is a single run: `--seed 0`, one actor-disjoint
+  split, one initialisation. Seeds 1 and 2 of the identical config are running and had not
+  finished when this was written; when they land, `modeling/runs/*/metrics.json` carries
+  them and this section gets the mean and the spread. **Until then, treat 0.7488 / 0.5220
+  as one observation, not an estimate with a standard error.** Note also that
+  `finetune.py` derives the actor split from the same seed, so seeds 1 and 2 vary the split
+  as well as the initialisation — a wider and more honest spread than re-initialising on a
+  fixed split, but not the same quantity as a seed-only variance.
 - **Acted emotion.** Portrayals, not felt affect, with a director's intent recorded.
-  Everything here is the optimistic case. None of it transfers to spontaneous speech
-  without re-measurement.
+  Everything here is the optimistic case.
+- **CREMA-D contains no spontaneous speech at all.** So the step from "α is only 0.348 even
+  at maximum deliberate exaggeration, therefore un-exaggerated speech must be worse" is an
+  **unverified extrapolation**. The within-corpus intensity contrast (0.168 low → 0.348
+  high, within-actor, n = 455 clips per level) supports the direction and nothing more. No
+  measurement in this repo touches natural speech.
 - **The label-target problem cuts both ways.** Twelve of fourteen papers do not state
   whether they scored against intended or consensus labels. We cannot assign the
   above-ceiling audio results to either explanation, and we do not.
@@ -238,6 +374,10 @@ measurement we made.
 - **The ceiling moves with panel size and with the tie rule.** A benchmark built only
   from high-agreement clips has a much higher ceiling and a much narrower claim.
   Cao et al. report α = 0.79 on the ≥80%-agreement subset against 0.42 overall.
+- **The ceiling estimator is Monte Carlo and shares one RNG stream across modalities**, so
+  its third decimal moves if you change `--panels` or `--bootstrap`. Every number here is
+  pinned to one exact command (see [Reproduce](#reproduce)); quoting the estimate to more
+  than three decimals would be quoting noise.
 - **No rater demographics exist in CREMA-D**, so the invariance groupings are
   behavioural proxies. The one grouping that shows an effect is latent and
   data-derived; the held-out split and the ability residualisation address
@@ -282,19 +422,26 @@ measurement we made.
 
 ## Status
 
-Computed on real data (`data/ratings_long.parquet`, 219,686 ratings):
+Computed on real data (`data/ratings_long.parquet`, 219,686 ratings, provenance verified
+against the official CREMA-D repository):
 
 - [x] reliability: α, pairwise agreement, tie rates, per modality
 - [x] ceiling: Dirichlet-multinomial posterior-predictive estimator, cross-fitted,
       clip-bootstrap CIs, curve in R, per modality and per emotion class
 - [x] split-half assumption-light cross-check
 - [x] published SOTA table, 33 rows, provenance and rejected numbers documented
-- [x] LR-DIF + Mantel-Haenszel + nominal response shift, four rater groupings
+- [x] LR-DIF + Mantel-Haenszel + nominal response shift, five rater groupings
 - [x] A → B transfer with a size-matched permutation null
+- [x] wav2vec2-base fine-tune, actor-disjoint split, scored against both labels
+- [x] figures, light and dark, every number read from the artifacts at draw time
+- [x] audio provenance: all 7,442 git-lfs digests and on-disk sha256s matched against
+      `github.com/CheyneyComputerScience/CREMA-D`
 
 Pending:
 
-- [ ] **figures/** — ceiling vs SOTA, DIF, transfer degradation. Not yet drawn.
+- [ ] **seeds 1 and 2 of the fine-tune.** Until they land the headline is one run.
+- [ ] the `--split random` cautionary baseline (code path exists, never run; it is a
+      footnote, never a headline)
 - [ ] leave-one-rater-out consensus key as the DIF robustness check (currently keyed
       on intent only)
 - [ ] a proper nominal response model (Bock 1972) fit rather than the matched-decile
@@ -304,12 +451,45 @@ Pending:
       preprint, abstract only so far. It is the nearest prior work and the related-work
       section should not be written without it.
 
+## Reproduce
+
+```bash
+./data_ingest/fetch.sh --audio                 # CSVs + 7,442 WAVs, both gitignored
+.venv/bin/python data_ingest/build_ratings.py  # -> data/ratings_long.parquet
+.venv/bin/python data_ingest/validate_against_authors.py
+
+.venv/bin/python agreement/run.py              # -> agreement/out/agreement.json
+.venv/bin/python ceiling/ceiling.py --panels 1,2,3,5,7,9,10,11,13,15,21,31,51,101,201 \
+                                    --bootstrap 150 --seed 0
+.venv/bin/python invariance/dif.py --modality audio
+.venv/bin/python invariance/transfer.py --modality audio
+.venv/bin/python modeling/finetune.py --seed 0 # ~30 min on an M4 Pro over MPS
+.venv/bin/python figures/make.py               # -> figures/*-{light,dark}.{png,svg}
+```
+
+Those `ceiling.py` flags are not decoration. The estimator is Monte Carlo with one shared
+RNG stream, so a different panel grid or bootstrap count consumes the draws differently and
+moves the estimate in the third decimal. That exact command reproduces
+**0.7272 [0.7229, 0.7316]** on audio, which is the 0.727 [0.723, 0.732] quoted throughout,
+and it is what `ceiling/out/ceiling.json` and `web/index.html` were built from.
+
 Every script has a runnable self-check with planted known answers:
 
 ```
 .venv/bin/python ceiling/ceiling.py --check
 .venv/bin/python invariance/dif.py --check
 .venv/bin/python invariance/transfer.py --check
+.venv/bin/python modeling/common.py            # asserts the actor split never leaks
 ```
+
+### No simulated numbers
+
+A fixture (`data/SIMULATED_ratings_long.parquet`, regenerable with
+`.venv/bin/python ceiling/simulate.py`) exists so the analysis could be written before the
+ingest landed. It is gitignored, it is deleted from this working tree, and nothing in this
+README or in `figures/` came from it. That is checkable rather than promised: every script
+stamps `"source_file"` and `"simulated": true|false` into the JSON it emits, all of those
+JSONs currently read `data/ratings_long.parquet` with `simulated: false`, and
+`figures/make.py` **aborts** if any artifact it reads is stamped `simulated: true`.
 
 File ownership across the three agents working this repo: [`CONTRACT.md`](CONTRACT.md).
