@@ -1,0 +1,28 @@
+starting with     7442 wavs at Wed Aug 26 19:57:30 CDT 2026
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/211 [00:00<?, ?it/s]Loading weights: 100%|██████████| 211/211 [00:00<00:00, 55426.70it/s]
+[transformers] [1mWav2Vec2Model LOAD REPORT[0m from: facebook/wav2vec2-base
+Key                          | Status     |  | 
+-----------------------------+------------+--+-
+project_hid.bias             | UNEXPECTED |  | 
+project_q.weight             | UNEXPECTED |  | 
+quantizer.weight_proj.weight | UNEXPECTED |  | 
+quantizer.codevectors        | UNEXPECTED |  | 
+project_hid.weight           | UNEXPECTED |  | 
+quantizer.weight_proj.bias   | UNEXPECTED |  | 
+project_q.bias               | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+ep0 loss 1.3842 val_acc 0.5971 (238s)
+ep1 loss 0.8529 val_acc 0.7221 (221s)
+ep2 loss 0.6291 val_acc 0.7087 (219s)
+ep3 loss 0.4473 val_acc 0.6920 (219s)
+ep4 loss 0.3107 val_acc 0.7366 (239s)
+ep5 loss 0.1997 val_acc 0.7154 (220s)
+ep6 loss 0.1361 val_acc 0.7422 (220s)
+ep7 loss 0.1033 val_acc 0.7299 (222s)
+{
+  "test_acc_vs_intended": 0.748780487804878,
+  "test_acc_vs_audio_consensus": 0.5219512195121951
+}
