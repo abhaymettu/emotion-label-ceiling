@@ -1,0 +1,7 @@
+target,anger,disgust,fear,happy,neutral,sad
+anger,252,11,2,9,5,0
+disgust,34,201,9,7,10,18
+fear,22,15,171,13,6,52
+happy,36,10,15,190,22,6
+neutral,7,0,3,8,218,3
+sad,8,34,36,5,36,160
