@@ -920,7 +920,7 @@
     "reference": "Krippendorff's own thresholds: alpha >= 0.800 to draw firm conclusions, >= 0.667 for tentative ones. The deliberately-exaggerated audio-only ceiling sits well under both."
   },
   "consensus_label_quality": {
-    "note": "the majority-vote label is what published CREMA-D benchmarks actually score against. agreement_{mod} is the modal response's share of that clip's votes; a tie means the label is decided arbitrarily.",
+    "note": "the majority-vote label is what published CREMA-D benchmarks actually score against. modal share is the modal response's share of that clip's votes; a tie means the label is decided arbitrarily.",
     "audio": {
       "n_clips": 7442,
       "mean_modal_share": 0.6260441400995016,

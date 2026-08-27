@@ -287,23 +287,32 @@ def main():
     # ---------- 5b. how solid is the label a benchmark would train on? ----------
     # Benchmarks do not train on alpha; they train on the majority vote. So state
     # plainly how often that vote is a real majority and how often it is a coin toss.
-    clips = pd.read_parquet(ROOT / "data" / "clips.parquet")
+    # Derived from the ratings themselves, not from clips.parquet, so running
+    # against --ratings SIMULATED_* reports the fixture's numbers and not the
+    # real corpus's.
     res["consensus_label_quality"] = {"note": (
         "the majority-vote label is what published CREMA-D benchmarks actually score against. "
-        "agreement_{mod} is the modal response's share of that clip's votes; a tie means the "
+        "modal share is the modal response's share of that clip's votes; a tie means the "
         "label is decided arbitrarily.")}
+    intent = df.groupby("clip_id", observed=True).intended_emotion.first()
     for m in MODALITIES:
-        share = clips[f"agreement_{m}"]
+        N, keys = counts_matrix(df[df.presented_modality == m], ["clip_id"],
+                                "response_emotion", EMOTIONS)
+        tot = N.sum(axis=1)
+        top = N.max(axis=1)
+        share = top / tot
+        tied = (N == top[:, None]).sum(axis=1) > 1
+        modal = np.array(EMOTIONS)[N.argmax(axis=1)]
+        differs = modal != intent.reindex(keys).astype(str).to_numpy()
         res["consensus_label_quality"][m] = {
-            "n_clips": int(len(clips)),
+            "n_clips": int(len(N)),
             "mean_modal_share": float(share.mean()),
-            "median_modal_share": float(share.median()),
+            "median_modal_share": float(np.median(share)),
             "pct_clips_modal_share_under_50": float((share < 0.5).mean() * 100),
             "pct_clips_modal_share_at_or_over_80": float((share >= 0.8).mean() * 100),
             "pct_clips_unanimous": float((share == 1.0).mean() * 100),
-            "pct_clips_consensus_tied": float(clips[f"consensus_tied_{m}"].mean() * 100),
-            "pct_clips_consensus_differs_from_intended": float(
-                (clips[f"consensus_{m}"].astype(str) != clips.intended_emotion.astype(str)).mean() * 100),
+            "pct_clips_consensus_tied": float(tied.mean() * 100),
+            "pct_clips_consensus_differs_from_intended": float(differs.mean() * 100),
         }
 
     # ---------- 6. per-rater reliability ----------

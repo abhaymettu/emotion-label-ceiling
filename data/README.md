@@ -119,6 +119,23 @@ Raters agree with the actor's *intended* emotion on:
 | visual only | 56.9% | 73,191 |
 | audiovisual | 62.5% | 73,242 |
 
-Chance is 16.7%. See `agreement/` for the reliability statistics that actually
-matter (this table is agreement with the *director's intent*, not inter-rater
-agreement).
+Chance is 16.7%. That table is agreement with the *director's intent*, which is
+not the same thing as inter-rater agreement. For the reliability statistics that
+actually matter, see [`agreement/README.md`](../agreement/README.md) — the short
+version is Krippendorff alpha 0.265 audio-only, 0.447 visual, 0.486 audiovisual.
+
+## Audio
+
+`./data_ingest/fetch.sh --audio` sparse-clones AudioWAV from the GitLab mirror
+into `data/audio/repo/AudioWAV/` (gitignored). 7,442 files, 16 kHz mono PCM,
+~600MB, and about the same again in `.git/lfs`. `clips.parquet.wav_file` is the
+basename. `raw.githubusercontent.com` will not do: it serves 130-byte git-lfs
+pointer stubs for these, so anything that fetches WAVs from there is silently
+downloading text files.
+
+Four clips are known-broken upstream and are *still in* both parquets, because
+the raters rated whatever was actually played to them and dropping the ratings
+would misrepresent the rating data. Excluding them is an audio-modelling
+decision, not an ingest one: `1076_MTI_NEU_XX` and `1076_MTI_SAD_XX` (near-empty),
+`1064_TIE_SAD_XX` (no duration), `1064_IEO_DIS_MD` (a 1-minute file containing
+every emotion for that sentence).
