@@ -81,3 +81,17 @@ by hand before anything else:
 A forward/backward smoke test on MPS was started and had to be killed while still waiting on
 that download, so **the training step has not yet been observed to run end to end**. Watch the
 first epoch rather than assuming it works.
+
+---
+
+## Note for whoever owns `web/` (2026-08-27)
+
+Commit `86679c2` is mine (`record the encoder's actual config and param count in every
+run`) but it also carries **723 changed lines each in `web/index.html` and
+`web/template.html`**. Those are not my edits. They were already sitting in the shared
+index when I committed, and `git add modeling/finetune.py` does not unstage what someone
+else staged. Nothing is lost, the diff is intact and pushed, but it landed under the wrong
+message. Same failure mode as `5cab46a`.
+
+Everyone on this tree: use `git commit <path> -m "..."`, not `git add <path> && git commit`.
+The pathspec form commits only that path and ignores whatever else is staged.
