@@ -310,8 +310,8 @@ def analyse_group(counts, group, levels, raters, within, perm=0, seed=0, verbose
     return res, base, frees
 
 
-def leave_one_rater_out(counts, group, raters, base, obs, max_raters=None, seed=0,
-                        verbose=True):
+def leave_one_rater_out(counts, group, raters, base, frees, obs, max_raters=None,
+                        seed=0, verbose=True):
     """Refit the whole DIF analysis with each rater deleted, warm-started.
 
     Reports, per item, the min/max dtvd over deletions and the single most
@@ -329,9 +329,13 @@ def leave_one_rater_out(counts, group, raters, base, obs, max_raters=None, seed=
         keep = raters != r          # a rater may own more than one person unit
         c2, g2 = counts[keep], group[keep]
         ng2 = np.array([(g2 == 0).sum(), (g2 == 1).sum()], float)
-        b = fit_nrm(c2, g2, init=base, maxit=40, tol=1e-5)
+        # warm-start each fit from its OWN full-sample solution. Starting the free-item
+        # fit from the anchored baseline and stopping early drags dTVD toward zero, and
+        # that artefact is large enough to look like a data effect: it put the observed
+        # value outside the LOO range for several cells before this was fixed.
+        b = fit_nrm(c2, g2, init=base, maxit=100, tol=1e-7)
         for i in range(K):
-            f = fit_nrm(c2, g2, free_item=i, init=b, maxit=40, tol=1e-5)
+            f = fit_nrm(c2, g2, free_item=i, init=frees[i], maxit=100, tol=1e-7)
             vals[EMOTIONS[i]][n] = dif_stats(f, i, ng2)["dtvd"]
         if verbose and (n + 1) % 200 == 0:
             el = time.time() - t0
@@ -442,6 +446,22 @@ def self_check() -> int:
     gp = _permute(g5, rt5, True, np.random.default_rng(3))
     assert all(sorted(gp[rt5 == r]) == [0, 1] for r in np.unique(rt5)), gp
     assert set(_permute(g6, rt6, False, np.random.default_rng(3))) == {0, 1}
+
+    # 6. leave-one-out must bracket the full-sample estimate, not sit below it
+    small = counts[:400]
+    gs = grp[:400]
+    rs = np.arange(400)
+    bs = fit_nrm(small, gs)
+    fs = {i: fit_nrm(small, gs, free_item=i, init=bs) for i in range(K)}
+    ngs = np.array([(gs == 0).sum(), (gs == 1).sum()], float)
+    obs = {EMOTIONS[i]: dif_stats(fs[i], i, ngs)["dtvd"] for i in range(K)}
+    lo = leave_one_rater_out(small, gs, rs, bs, fs, obs, max_raters=40, seed=0,
+                             verbose=False)
+    for e, l in lo.items():
+        assert l["loo_min"] <= l["observed_dtvd"] <= l["loo_max"], (
+            f"{e}: observed {l['observed_dtvd']:.5f} outside LOO range "
+            f"[{l['loo_min']:.5f}, {l['loo_max']:.5f}] — the refits are not "
+            f"converging to the same optimum as the full-sample fit")
 
     print(f"ok  NRM recovers params (max err a={ea:.3f} c={ec:.3f}); "
           f"planted nominal DIF found (chi2={lr:.0f}, dtvd={st['dtvd']:.3f}, "
@@ -566,8 +586,8 @@ def main() -> int:
         if a.loo and gcol in loo_groups:
             obs = {e: r["items"][e]["dtvd"] for e in EMOTIONS}
             r["leave_one_rater_out"] = leave_one_rater_out(
-                counts, group, raters, base, obs, max_raters=a.loo_max or None,
-                seed=a.seed)
+                counts, group, raters, base, frees, obs,
+                max_raters=a.loo_max or None, seed=a.seed)
         res["by_group"][gcol] = r
         for e in EMOTIONS:
             it = r["items"][e]
