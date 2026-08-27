@@ -294,7 +294,7 @@ CREMA-D publishes no rater demographics, so groups are behavioural.
 | response speed (fast / deliberate) | anger | 0.004 | negligible | A | +4.9 pts |
 | response-style extremity | neutral | 0.005 | negligible | A | −4.5 pts |
 | session position (early / late) | anger | 0.006 | negligible | A | +6.3 pts |
-| latent construal class | sad | 0.018 | negligible | **B (moderate)** | — |
+| latent construal class | sad | 0.018 | negligible | **B (moderate)** | **−10.7 pts** |
 | ↳ ability-residualised | **neutral** | **0.032** | negligible | **C (large)** | **+13.5 pts** |
 
 **On every manifest behavioural grouping, DIF is negligible.** Speed, response-style
