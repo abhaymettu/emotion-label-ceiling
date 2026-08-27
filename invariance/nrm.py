@@ -26,6 +26,7 @@ unmodelled clip difficulty (see README).
 from __future__ import annotations
 
 import argparse
+import itertools
 import json
 import sys
 import time
@@ -204,24 +205,54 @@ def dif_stats(fit_free, item, ng, x=NODES):
 # ------------------------------------------------------------------ counting
 
 def to_counts(df, group_col):
-    """(counts (R,I,K), group (R,), rater_ids) for one grouping variable."""
+    """Person-level response counts for one grouping variable.
+
+    A person unit is a (rater, group value) pair, NOT a rater. For a between-rater
+    grouping (speed, extremity, construal style) every rater has one group value and
+    a unit is exactly a rater. For a WITHIN-rater grouping — `grp_position` splits
+    each rater's own session into its early and late halves — the same human
+    contributes two units with two thetas, which is the nominal-model analogue of a
+    within-person invariance test. Collapsing that to one unit per rater with a
+    single group label, which is what a naive groupby would do, silently destroys
+    the design and tests nothing.
+
+    Returns (counts (U,I,K), group (U,), rater index per unit (U,), levels, within).
+    `within` is True when any rater spans both groups; it changes how the permutation
+    null is built (labels are swapped inside a rater, not across raters) and how
+    leave-one-rater-out deletes (all of that rater's units go together).
+    """
     d = df[df[group_col].notna()]
-    raters = np.sort(d.rater_id.unique())
-    ri = pd.Series(np.arange(len(raters)), index=raters)
-    counts = np.zeros((len(raters), K, K), dtype=np.int64)
-    np.add.at(counts,
-              (ri.loc[d.rater_id].to_numpy(),
-               d.intended_emotion.map(E_IDX).to_numpy(),
-               d.response_emotion.map(E_IDX).to_numpy()), 1)
     lv = sorted(d[group_col].dropna().unique())
-    gmap = d.groupby("rater_id", observed=True)[group_col].first()
-    group = (gmap.loc[raters].to_numpy() == lv[1]).astype(int)
-    return counts, group, raters, [str(v) for v in lv]
+    unit_key = list(zip(d.rater_id.astype(str), d[group_col].astype(str)))
+    units = pd.Index(pd.unique(pd.Series(unit_key)))
+    ui = pd.Series(np.arange(len(units)), index=units).loc[unit_key].to_numpy()
+    counts = np.zeros((len(units), K, K), dtype=np.int64)
+    np.add.at(counts, (ui, d.intended_emotion.map(E_IDX).to_numpy(),
+                       d.response_emotion.map(E_IDX).to_numpy()), 1)
+    u_rater = np.array([u[0] for u in units])
+    u_group = np.array([u[1] for u in units])
+    group = (u_group == str(lv[1])).astype(int)
+    raters = pd.factorize(u_rater)[0]
+    within = bool(len(units) > len(np.unique(u_rater)))
+    return counts, group, raters, [str(v) for v in lv], within
+
+
+def _permute(group, raters, within, rng):
+    """Null relabelling. Across raters normally; inside each rater when the grouping
+    is within-rater, which is the only relabelling that preserves that design."""
+    if not within:
+        return rng.permutation(group)
+    g = group.copy()
+    order = np.argsort(raters, kind="stable")
+    for _, blk in itertools.groupby(order, key=lambda i: raters[i]):
+        b = np.fromiter(blk, int)
+        g[b] = rng.permutation(group[b])
+    return g
 
 
 # -------------------------------------------------------------------- driver
 
-def analyse_group(counts, group, levels, perm=0, seed=0, verbose=True):
+def analyse_group(counts, group, levels, raters, within, perm=0, seed=0, verbose=True):
     ng = np.array([(group == 0).sum(), (group == 1).sum()], float)
     t0 = time.time()
     base = fit_nrm(counts, group)
@@ -243,7 +274,9 @@ def analyse_group(counts, group, levels, perm=0, seed=0, verbose=True):
             **st,
         }
     res = {
-        "levels": levels,
+        "levels": levels, "within_rater_grouping": within,
+        "n_person_units": int(len(group)),
+        "n_raters_distinct": int(len(np.unique(raters))),
         "theta_focal_mean": float(base["mu"][1]), "theta_focal_sd": float(base["sd"][1]),
         "baseline_loglik": base["loglik"], "baseline_converged": base["converged"],
         "items": items, "fit_seconds": round(time.time() - t0, 2),
@@ -254,7 +287,7 @@ def analyse_group(counts, group, levels, perm=0, seed=0, verbose=True):
         null = {e: [] for e in EMOTIONS}
         nullc = {e: [] for e in EMOTIONS}
         for _ in range(perm):
-            gp = rng.permutation(group)
+            gp = _permute(group, raters, within, rng)
             b = fit_nrm(counts, gp, init=base)
             for i in range(K):
                 f = fit_nrm(counts, gp, free_item=i, init=b)
@@ -275,22 +308,23 @@ def analyse_group(counts, group, levels, perm=0, seed=0, verbose=True):
     return res, base, frees
 
 
-def leave_one_rater_out(counts, group, base, obs, max_raters=None, seed=0, verbose=True):
+def leave_one_rater_out(counts, group, raters, base, obs, max_raters=None, seed=0,
+                        verbose=True):
     """Refit the whole DIF analysis with each rater deleted, warm-started.
 
     Reports, per item, the min/max dtvd over deletions and the single most
     influential rater. Jackknife SE is also reported (n-1 scaling).
     """
-    R = counts.shape[0]
-    idx = np.arange(R)
+    U = counts.shape[0]
+    uniq = np.unique(raters)
+    idx = uniq
     rng = np.random.default_rng(seed)
-    if max_raters and max_raters < R:
-        idx = np.sort(rng.choice(R, max_raters, replace=False))
+    if max_raters and max_raters < len(uniq):
+        idx = np.sort(rng.choice(uniq, max_raters, replace=False))
     vals = {e: np.empty(len(idx)) for e in EMOTIONS}
     t0 = time.time()
     for n, r in enumerate(idx):
-        keep = np.ones(R, bool)
-        keep[r] = False
+        keep = raters != r          # a rater may own more than one person unit
         c2, g2 = counts[keep], group[keep]
         ng2 = np.array([(g2 == 0).sum(), (g2 == 1).sum()], float)
         b = fit_nrm(c2, g2, init=base, maxit=40, tol=1e-5)
@@ -308,12 +342,12 @@ def leave_one_rater_out(counts, group, base, obs, max_raters=None, seed=0, verbo
         # delete-one jackknife SE, exact when every rater is deleted
         se = float(np.sqrt((len(v) - 1) / len(v) * ((v - m) ** 2).sum()))
         out[e] = {
-            "n_deletions": int(len(idx)), "exhaustive": bool(len(idx) == R),
+            "n_deletions": int(len(idx)), "exhaustive": bool(len(idx) == len(uniq)),
             "observed_dtvd": float(obs[e]),
             "loo_min": float(v.min()), "loo_max": float(v.max()),
             "loo_mean": float(m),
             "max_abs_change": float(np.abs(v - obs[e]).max()),
-            "jackknife_se": se if len(idx) == R else None,
+            "jackknife_se": se if len(idx) == len(uniq) else None,
         }
     return out
 
@@ -390,6 +424,22 @@ def self_check() -> int:
         nulls.append(dif_stats(f3, E_IDX["fear"], ng)["dtvd"])
     assert max(nulls) < st["dtvd"], \
         f"permutation null {max(nulls):.4f} reaches observed {st['dtvd']:.4f}"
+
+    # 5. person units: a within-rater grouping must split the rater, not collapse it
+    d = pd.DataFrame({
+        "rater_id": ["r1", "r1", "r2", "r2"],
+        "intended_emotion": ["fear"] * 4, "response_emotion": ["fear", "sad"] * 2,
+        "grp_position": ["early", "late", "early", "late"],
+        "grp_speed": ["fast"] * 2 + ["deliberate"] * 2,
+    })
+    c5, g5, rt5, lv5, within5 = to_counts(d, "grp_position")
+    assert within5 and len(g5) == 4 and len(np.unique(rt5)) == 2, (within5, g5, rt5)
+    c6, g6, rt6, lv6, within6 = to_counts(d, "grp_speed")
+    assert not within6 and len(g6) == 2, (within6, g6)
+    # the within-rater null must relabel inside a rater, so every rater keeps one of each
+    gp = _permute(g5, rt5, True, np.random.default_rng(3))
+    assert all(sorted(gp[rt5 == r]) == [0, 1] for r in np.unique(rt5)), gp
+    assert set(_permute(g6, rt6, False, np.random.default_rng(3))) == {0, 1}
 
     print(f"ok  NRM recovers params (max err a={ea:.3f} c={ec:.3f}); "
           f"planted nominal DIF found (chi2={lr:.0f}, dtvd={st['dtvd']:.3f}, "
@@ -505,14 +555,17 @@ def main() -> int:
     rows = []
     for gcol in groups:
         d = df[df._style_holdout] if gcol.startswith("grp_style") else df
-        counts, group, raters, levels = to_counts(d, gcol)
-        print(f"\n=== {gcol}  {levels}  "
-              f"raters={len(raters):,} trials={counts.sum():,}", file=sys.stderr)
-        r, base, frees = analyse_group(counts, group, levels, perm=a.perm, seed=a.seed)
+        counts, group, raters, levels, within = to_counts(d, gcol)
+        print(f"\n=== {gcol}  {levels}  raters={len(np.unique(raters)):,} "
+              f"units={len(group):,} trials={counts.sum():,} "
+              f"{'[within-rater]' if within else ''}", file=sys.stderr)
+        r, base, frees = analyse_group(counts, group, levels, raters, within,
+                                       perm=a.perm, seed=a.seed)
         if a.loo and gcol in loo_groups:
             obs = {e: r["items"][e]["dtvd"] for e in EMOTIONS}
             r["leave_one_rater_out"] = leave_one_rater_out(
-                counts, group, base, obs, max_raters=a.loo_max or None, seed=a.seed)
+                counts, group, raters, base, obs, max_raters=a.loo_max or None,
+                seed=a.seed)
         res["by_group"][gcol] = r
         for e in EMOTIONS:
             it = r["items"][e]
