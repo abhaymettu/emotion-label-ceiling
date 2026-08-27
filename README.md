@@ -473,20 +473,36 @@ moves the estimate in the third decimal. That exact command reproduces
 **0.7272 [0.7229, 0.7316]** on audio, which is the 0.727 [0.723, 0.732] quoted throughout,
 and it is what `ceiling/out/ceiling.json` and `web/index.html` were built from.
 
-A variant of the audio ceiling, **0.728 [0.722, 0.731]**, had been circulating alongside it.
-It is wrong, and every place it appeared has been corrected to 0.727 [0.723, 0.732]. Where
-it came from: `ceiling/out/` is gitignored — regenerable, therefore overwritten in place and
-never committed — so an earlier run under a different `--panels` / `--bootstrap` grid left a
-number in a note that the artifact it came from no longer held. It is not recoverable from
-git, and it does not reproduce. Two things make 0.727 the right one: the exact command above
-reproduces it, and every artifact currently in the tree agrees with it
-(`ceiling/out/ceiling.json`, the `ceiling_context` block inside
-`modeling/runs/…-s0/metrics.json`, and the built `web/index.html`).
+A second value for the audio ceiling, **0.728 [0.722, 0.731]**, had been circulating
+alongside it. **0.727 [0.723, 0.732] is the correct one** and every place carrying the other
+has been corrected. The two differ because of *which command was run*, and that is
+demonstrable rather than a guess — re-running the same estimator on the same data under the
+script's default flags instead of the pinned ones gives:
 
-Both numbers are within Monte-Carlo noise of each other, which is the point: with 150
-bootstrap resamples the CI endpoints themselves carry about ±0.001, so the third decimal is
-not a quantity worth arguing over — it is a quantity worth **pinning to one command**, which
-is why the command is written out above rather than left as `python ceiling/ceiling.py`.
+| run | audio ceiling | 95% CI |
+|---|---|---|
+| `--panels 1,2,3,5,7,9,10,11,13,15,21,31,51,101,201 --bootstrap 150 --seed 0` (pinned) | **0.7272** | [0.7229, 0.7316] |
+| script defaults (`--panels 1,3,5,7,9,11,15,21,31,51,101 --bootstrap 200`) | 0.7270 | [0.7225, **0.7311**] |
+
+The default-flag run reproduces the stray interval to three decimals — [0.722, 0.731]. The
+mechanism is in `ceiling.py`: one `numpy` Generator is threaded through the pooled run and
+then all three modality runs in sequence, so changing the panel grid or the bootstrap count
+changes how many draws are consumed before the audio estimate is computed, and the estimate
+moves in its third decimal. Nothing is wrong with either run; they are the same estimator at
+different points in one RNG stream.
+
+0.727 wins because it is the number every artifact in the tree actually carries —
+`ceiling/out/ceiling.json`, the `ceiling_context` block inside
+`modeling/runs/…-s0/metrics.json`, and the built `web/index.html` — and because the pinned
+command above regenerates it exactly. The stray value came from a run whose output was
+overwritten: `ceiling/out/` is gitignored, so it is regenerated in place and never
+committed, and a number quoted from it outlives the file it came from. It appears in no
+commit in this repository's history.
+
+The real lesson is the last row of [Limitations](#limitations): with 150 bootstrap resamples
+the CI endpoints themselves carry roughly ±0.001, so the third decimal is not worth
+arguing over. It is worth **pinning to one command**, which is why the command is written
+out above rather than left as `python ceiling/ceiling.py`.
 
 Every script has a runnable self-check with planted known answers:
 

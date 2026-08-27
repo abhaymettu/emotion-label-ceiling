@@ -288,9 +288,11 @@ def analyse_group(counts, group, levels, raters, within, perm=0, seed=0, verbose
         nullc = {e: [] for e in EMOTIONS}
         for _ in range(perm):
             gp = _permute(group, raters, within, rng)
-            b = fit_nrm(counts, gp, init=base)
+            # warm-started from the observed fit; the null is a distribution summary,
+            # not a reported parameter, so 1e-6 is plenty and ~4x faster
+            b = fit_nrm(counts, gp, init=base, maxit=80, tol=1e-6)
             for i in range(K):
-                f = fit_nrm(counts, gp, free_item=i, init=b)
+                f = fit_nrm(counts, gp, free_item=i, init=b, maxit=80, tol=1e-6)
                 null[EMOTIONS[i]].append(dif_stats(f, i, ng)["dtvd"])
                 nullc[EMOTIONS[i]].append(2.0 * (f["loglik"] - b["loglik"]))
         for e in EMOTIONS:
