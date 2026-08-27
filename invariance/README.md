@@ -137,9 +137,10 @@ Stated whether or not they help.
    exists and why the χ² is labelled descriptive.
 3. **Anchor purity.** Testing item *i* assumes the other five function identically
    across groups. Standard practice, and wrong if DIF is pervasive. The self-check shows
-   the failure mode directly: with one large planted effect, the five clean items pick up
-   an apparent dTVD of up to 0.096 purely from anchor contamination, against a
-   permutation null of 0.037. Read single-item results, not the profile across items.
+   the failure mode directly: with one large effect planted on `fear`, the five clean
+   items pick up an apparent dTVD of up to 0.096 purely from anchor contamination —
+   against 0.037, the largest dTVD in twelve replicates of the same data with the group
+   labels scrambled. Read single-item results, not the profile across items.
 4. **Normal θ within group.** Assumed. The focal group's mean and SD are free; its shape
    is not.
 5. **Median splits of continuous covariates.** Speed, extremity and construal style are

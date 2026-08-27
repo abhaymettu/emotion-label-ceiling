@@ -71,9 +71,21 @@ def nrm_table(d, loo=None):
                 l = loo["by_group"].get(g, {}).get("leave_one_rater_out", {}).get(e)
                 r += [f"{l['loo_min']:.4f} – {l['loo_max']:.4f}" if l else "—"]
             L.append("| " + " | ".join(r) + " |")
-    L += ["", "Least invariant items, mean dTVD over the five groupings: "
+    L += ["", "Least invariant items, mean dTVD over the groupings: "
               + ", ".join(f"**{x['item']}** {x['mean_dtvd']:.4f}"
                           for x in d["least_invariant_items"]) + "."]
+    if perm:
+        # dTVD has a per-item floor that depends on that item's n, so the ranking that
+        # answers "which category is least invariant" is the one net of its own null.
+        ex = {}
+        for gr in d["by_group"].values():
+            for e, it in gr["items"].items():
+                ex.setdefault(e, []).append(it["perm"]["excess_dtvd_over_null"])
+        rank = sorted(((e, sum(v) / len(v)) for e, v in ex.items()),
+                      key=lambda kv: -kv[1])
+        L += ["", "Same ranking **net of each item's own permutation null**, which is "
+                  "the one to read because dTVD's floor scales with that item's n: "
+              + ", ".join(f"**{e}** {v:+.4f}" for e, v in rank) + "."]
     return "\n".join(L)
 
 
