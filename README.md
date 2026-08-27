@@ -511,6 +511,7 @@ Every script has a runnable self-check with planted known answers:
 .venv/bin/python invariance/dif.py --check
 .venv/bin/python invariance/transfer.py --check
 .venv/bin/python modeling/common.py            # asserts the actor split never leaks
+.venv/bin/python figures/make.py --check       # asserts a simulated artifact aborts the draw
 ```
 
 ### No simulated numbers

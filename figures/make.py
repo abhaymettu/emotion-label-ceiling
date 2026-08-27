@@ -410,7 +410,29 @@ def fig_dif(theme):
     save(fig, "04-rater-invariance", theme)
 
 
+def self_check() -> int:
+    """The simulated gate is a claim the README makes, so it gets a test."""
+    import subprocess, tempfile
+    ok = check_not_simulated({"simulated": False, "a": [{"simulated": False}]}, "x") is None
+    assert ok, "a clean artifact must pass"
+    with tempfile.TemporaryDirectory() as d:
+        bad = Path(d) / "bad.json"
+        bad.write_text(json.dumps({"by_modality": {"audio": {"simulated": True,
+                                                             "source_file": "data/SIMULATED_x.parquet"}}}))
+        r = subprocess.run([sys.executable, "-c",
+                            f"import sys; sys.path.insert(0, {str(OUT)!r}); "
+                            f"from make import check_not_simulated; import json; "
+                            f"check_not_simulated(json.load(open({str(bad)!r})), 'bad.json')"],
+                           capture_output=True, text=True)
+        assert r.returncode != 0, "a simulated artifact must abort the run, not warn"
+        assert "REFUSING TO DRAW" in r.stderr, r.stderr
+    print("figures self-check ok: nested simulated=true aborts, simulated=false passes")
+    return 0
+
+
 if __name__ == "__main__":
+    if "--check" in sys.argv:
+        raise SystemExit(self_check())
     for theme in ("light", "dark"):
         print(theme)
         fig_modality(theme)
