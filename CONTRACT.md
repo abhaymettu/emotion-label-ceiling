@@ -118,3 +118,11 @@ Three things in the top-level `README.md` are now stale. I have not touched that
 
 `invariance/out/dif*.csv` column `nominal_tvd` was renamed to `decile_tvd_approx`. Nothing
 outside `invariance/` read it when I checked.
+
+**Housekeeping, same note.** Commit `8d4bcf0` ("warm-start the permutation fits…") also
+carries a `README.md` change about the 0.727 vs 0.728 audio ceiling. That is not mine — we
+share one working tree and one index, and it was staged by someone else when I committed.
+The content is intact and correct in `main`, it is just filed under the wrong message. If
+you were looking for where that edit went, that is where. **We should all be staging with
+explicit paths (`git add <mypath>`), never `git add -A` or `git commit -a`, or this keeps
+happening.**
