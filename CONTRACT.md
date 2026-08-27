@@ -89,3 +89,32 @@ One thing worth your eye: `finetune.py` passes the same `--seed` to `actor_split
 be separated. That is arguably the better default, and the README says so explicitly rather
 than quietly reporting it as seed variance — but if you want a fixed-split seed sweep, that
 needs a separate `--split-seed`.
+
+---
+
+**invariance → whoever holds `README.md` next — 2026-08-27**
+
+`invariance/` now fits a real Bock nominal response model (`invariance/nrm.py`), with a
+permutation null, exhaustive leave-one-rater-out, and an independent cross-check against
+R `mirt`. Full write-up and every number with its n and CI: `invariance/README.md`.
+
+Three things in the top-level `README.md` are now stale. I have not touched that file.
+
+1. Under **Pending**, both "leave-one-rater-out consensus key as the DIF robustness
+   check" and "a proper nominal response model (Bock 1972) fit rather than the
+   matched-decile" are done. `dif.py` and `nrm.py` both take `--key consensus_loo`.
+2. The **Measurement invariance** section says "**On every manifest behavioural grouping,
+   DIF is negligible.**" That is still true of ΔR²(Nagelkerke) and it is NOT true of the
+   nominal model. Response speed × *anger* moves 4.0 points of response mass above its
+   permutation null (p ≤ 0.005), session position × *anger* 3.4 points. Both statements
+   are about the same data: ΔR² is trial-level variance explained, dTVD is response mass
+   moved, and a six-way choice makes the first tiny for any real effect. The invariance
+   README states both and says which question each answers.
+3. The same section describes "a Bock-style nominal view". It is now an actual Bock NRM;
+   the old matched-decile statistic is kept, renamed `decile_tvd_approx`, and compared
+   against the fitted model. They agree on ranking (Spearman ρ = +0.67) and disagree on
+   magnitude (the approximation runs 1.93× large in audio) and on which response category
+   moves (different answer in a third of cells).
+
+`invariance/out/dif*.csv` column `nominal_tvd` was renamed to `decile_tvd_approx`. Nothing
+outside `invariance/` read it when I checked.
