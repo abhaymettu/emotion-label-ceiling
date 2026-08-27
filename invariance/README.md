@@ -8,9 +8,10 @@ clips), differential item functioning across behavioural rater groups is **small
 real**, and it is largest for `neutral` and `anger`. The biggest single effect is
 `neutral` under a latent construal split: **10.3% of response mass moves between groups
 at equal ability** (dTVD 0.1027, 95% CI 0.055–0.150, permutation null 0.0284,
-p ≤ 0.005). Four of five groupings clear their null on at least one category; the
-response-style-extremity split does not, on three of its six. Deleting any one of the
-2,443 raters moves nothing by more than 0.002 on the manifest groupings.
+p ≤ 0.005). All five rater groupings beat their permutation null on at least one
+category, but only **15 of the 30 (grouping × category) cells** do at p ≤ 0.05, and six
+cells sit *below* their null — the effect is specific, not pervasive. Deleting any one of
+the 2,443 raters moves nothing by more than 0.002 on the three manifest groupings.
 
 The fitted model **agrees with the matched-decile stand-in it replaces on the ranking**
 (Spearman ρ = +0.67) and **disagrees with it on magnitude** (the stand-in runs 1.93×
