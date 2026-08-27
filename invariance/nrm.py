@@ -39,7 +39,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "ceiling"))
 sys.path.insert(0, str(ROOT / "invariance"))
 from common import EMOTIONS, E_IDX, K, load  # noqa: E402
-from dif import add_groups  # noqa: E402  (same rater groupings as the LR-DIF analysis)
+from dif import add_groups, loo_consensus  # noqa: E402  (same groupings as LR-DIF)
 
 OUT = ROOT / "invariance" / "out"
 NODES = np.linspace(-4.0, 4.0, 61)
@@ -465,6 +465,9 @@ def main() -> int:
                     help="comma-separated grouping vars to run LOO on")
     ap.add_argument("--loo-max", type=int, default=0, help="0 = every rater")
     ap.add_argument("--check", action="store_true")
+    ap.add_argument("--key", default="intent", choices=["intent", "consensus_loo"],
+                    help="define items by the actor's intent (default) or by the "
+                         "leave-one-rater-out crowd majority label")
     ap.add_argument("--mirt-check", action="store_true",
                     help="fit the same NRM in R/mirt and compare (needs Rscript + mirt)")
     a = ap.parse_args()
@@ -479,10 +482,16 @@ def main() -> int:
         df = df[df.presented_modality == a.modality]
         meta = {**meta, "modality_filter": a.modality, "n_ratings": int(len(df))}
     df = add_groups(df, rng)
+    if a.key == "consensus_loo":
+        df["intended_emotion"] = loo_consensus(df, rng)
+        df = df[df.intended_emotion.notna()].copy()
     groups = [c for c in df.columns if c.startswith("grp_")]
 
     res = {**meta, "model": "Bock (1972) nominal response model, multigroup MML-EM",
-           "items": "six intended emotions", "categories": EMOTIONS,
+           "items": {"intent": "six intended emotions",
+                     "consensus_loo": "six leave-one-rater-out crowd majority "
+                                      "classes"}[a.key],
+           "item_key": a.key, "categories": EMOTIONS,
            "reference_category": EMOTIONS[0],
            "quadrature_nodes": len(NODES),
            "dif_test": "IRT-LR-DIF, all other items anchored, df=2(K-1)=10",
@@ -532,6 +541,7 @@ def main() -> int:
                                     for k, v in rank.items()]
     OUT.mkdir(parents=True, exist_ok=True)
     suffix = f"-{a.modality}" if a.modality else ""
+    suffix += "-consensusloo" if a.key == "consensus_loo" else ""
     tab.to_csv(OUT / f"nrm-dif{suffix}.csv", index=False)
     (OUT / f"nrm-dif{suffix}.json").write_text(json.dumps(res, indent=2))
 
