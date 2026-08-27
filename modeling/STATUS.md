@@ -95,3 +95,37 @@ message. Same failure mode as `5cab46a`.
 
 Everyone on this tree: use `git commit <path> -m "..."`, not `git add <path> && git commit`.
 The pathspec form commits only that path and ignores whatever else is staged.
+
+
+---
+
+## Two MPS traps, both found the slow way (2026-08-27)
+
+Anyone re-running `finetune.py` on Apple silicon should know about these. Both made a
+run look *slow* rather than *broken*, which is why they cost most of a morning.
+
+**1. DataLoader workers deadlock on fork after MPS is initialised.** `num_workers=4` with
+the model already on `mps` intermittently hangs the worker startup: the parent blocks in
+`_io_FileIO_write` filling a pipe no worker is draining. `ps` showed 2.4 seconds of CPU
+consumed across 16 minutes of wall clock. It is now `num_workers=0`. Reading a whole
+4,906-clip epoch off disk takes about 2.5 s, so the workers were buying nothing.
+
+**2. Per-batch padding recompiles an MPSGraph on nearly every step.** `collate` used to
+pad each batch to its own longest clip, so almost every one of the 614 steps had a unique
+tensor shape. Each shape compiles a new MPSGraph, and the cache is kept. With
+wav2vec2-large (24 layers, 1024 wide) the cost of holding all those graphs grows until the
+machine swaps. Measured, same model, same data, 100 steps:
+
+| | steps 21-40 | steps 41-60 | steps 61-80 | steps 81-100 | implied |
+|---|---|---|---|---|---|
+| per-batch padding | 0.90 s/step | 10.51 | 13.92 | 19.48 | 199 min/epoch |
+| one fixed width | 0.93 s/step | 0.93 | 0.94 | 0.97 | 10 min/epoch |
+
+A 13-step benchmark reported 0.825 s/step and missed all of it, because the collapse
+starts around step 40. **Benchmark long enough to see the second derivative.**
+
+`--pad fixed` selects the flat behaviour and tags the run `-fixpad`. It is not the default,
+because fixed padding changes what the encoder attends over: the three published
+`wav2vec2-base` runs used per-batch padding, and a `-fixpad` run is **not** comparable to
+them. Compare fixpad against fixpad only. `compare_capacity.py` groups by padding regime
+and refuses to average across it.
