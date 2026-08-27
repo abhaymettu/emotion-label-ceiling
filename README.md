@@ -456,6 +456,100 @@ is least precise on against the crowd label (0.211, n = 97 clips actually heard 
 The rest of this repo still picks sadness out as its weakest point; the nominal model,
 keyed on intent, does not.
 
+## Capacity is not what binds: wav2vec2-large, 3.3x the parameters
+
+The claim above rests on one model size, which is not enough to support it. If 95M
+parameters is simply too small to hear what a room full of listeners hears, then the
+47.8% is a statement about the model and not about the labels. So: the same fine-tune,
+the same actor-disjoint splits, the same three seeds, the same eight epochs, the same
+learning rates, the same batch size — with `facebook/wav2vec2-large` in place of
+`facebook/wav2vec2-base`. 315.4M encoder parameters against 94.4M, 24 layers of width
+1024 against 12 of width 768. Same family, same pretraining corpus (LibriSpeech 960h),
+same objective, same input. Only the size changes.
+
+**It does not close the gap. 3.34x the parameters buys 1.6 points of crowd-consensus
+accuracy, and leaves 23.0 of the 24.6 points of headroom to the ceiling exactly where
+they were.**
+
+Both rows below are new runs. The published `wav2vec2-base` numbers earlier in this
+README pad each batch to its own longest clip; these runs pad every batch to one fixed
+width, which was necessary to make wav2vec2-large trainable at all on this machine (see
+`modeling/STATUS.md`). Padding changes what the encoder attends over, so **base was
+re-run under the new scheme too** rather than comparing across it. The control moved very
+little: base seed 0 went 0.7488 → 0.7512 against intent and 0.5220 → 0.5256 against the
+crowd, and its gap went 22.7 → 22.6 points.
+
+| fixed padding, actor-disjoint, 3 seeds | base (94.4M) | large (315.4M) | difference |
+|---|---|---|---|
+| test accuracy vs the actor's **intended** emotion | 0.7476 ± 0.0056 | 0.7297 ± 0.0024 | **−1.8 pts** |
+| test accuracy vs the **audio-only crowd consensus** | 0.4811 ± 0.0392 | 0.4972 ± 0.0290 | **+1.6 pts** |
+| gap between the two labels | 26.6 pts | 23.2 pts | −3.4 pts |
+| headroom left to the 0.727 consensus ceiling | 24.6 pts | **23.0 pts** | −1.6 pts |
+
+Per seed, and every seed is a different actor split as well as a different init:
+
+| seed | base vs intent | large vs intent | base vs crowd | large vs crowd | crowd Δ |
+|---|---|---|---|---|---|
+| 0 | 0.7512 | 0.7274 | 0.5256 | 0.5305 | +0.49 |
+| 1 | 0.7505 | 0.7322 | 0.4515 | 0.4838 | +3.23 |
+| 2 | 0.7411 | 0.7295 | 0.4663 | 0.4774 | +1.10 |
+
+Because the seeds control the split, base and large can be compared pairwise on identical
+held-out actors. **The direction is consistent: large is better against the crowd on 3 of
+3 splits, and worse against intent on 3 of 3.** The size is not: +1.61 ± 1.44 points, an
+effect smaller than the seed-to-seed spread of the consensus number itself (sd 0.029 to
+0.039). Three seeds establish a direction here, not a magnitude.
+
+**The 25.6-point gap narrows, but not for the reason that would matter.** Under matched
+padding the gap goes 26.6 → 23.2 points. Read the two rows separately and it is clear
+that this is mostly the intent number falling, not the consensus number climbing to meet
+it. Capacity did not teach the model what the listeners heard; it made it slightly worse
+at the acted task.
+
+### The honest caveat, which cuts against the tidy story
+
+**wav2vec2-large is worse than base at the task it was actually trained on**, on all three
+seeds, and its best validation accuracy was lower every time (0.727 / 0.698 / 0.714
+against base's 0.755 / 0.735 / 0.755). The most likely explanation is boring: 8 epochs at
+`lr=3e-5` were chosen for a 95M model, and a 315M post-layer-norm encoder is known to want
+a gentler schedule. Holding the recipe fixed is what isolates capacity, and it is what was
+asked for here — but it means this experiment tests *wav2vec2-large under base's
+hyperparameters*, not wav2vec2-large at its best. A tuned large model might reach base's
+0.748 against intent. **What it would have to do to overturn the claim in this repo is
+different and much harder: climb roughly 23 points against the crowd label, from 0.497 to
+0.727.** Nothing here suggests it is close to that, and nothing here rules it out either.
+That run has not been done.
+
+### The classes that collapse under crowd labels stay collapsed
+
+Precision against the audio-only crowd consensus, mean over the same three seeds:
+
+| class | base | large | Δ |
+|---|---|---|---|
+| sad | 0.174 | 0.180 | +0.006 |
+| disgust | 0.377 | 0.388 | +0.011 |
+| happy | 0.342 | 0.336 | −0.006 |
+| fear | 0.387 | 0.427 | +0.040 |
+| anger | 0.635 | 0.560 | −0.075 |
+| neutral | 0.941 | 0.931 | −0.010 |
+
+Sad is the case worth stating plainly, because it is the one the rest of this repo keeps
+returning to. **A model with 3.3x the parameters is precise on sadness 18.0% of the time
+against what listeners actually heard, against 17.4% for the small one.** Recall on sad
+gets *worse*, 0.506 → 0.450. Neutral remains the mirror image in both models: precision
+above 0.93, recall around 0.3, because the crowd hears neutral in 826 of 1,640 test clips
+and the model, trained on intent, has been told there are only 240 of them.
+
+Reproduce, and note the `--pad fixed` flag, which is not the default:
+
+    .venv/bin/python modeling/finetune.py --model facebook/wav2vec2-base  --pad fixed --seed 0
+    .venv/bin/python modeling/finetune.py --model facebook/wav2vec2-large --pad fixed --seed 0
+    .venv/bin/python modeling/compare_capacity.py
+
+`compare_capacity.py` groups runs by padding regime and refuses to average across it.
+Six runs, roughly seven hours on an M4 Pro; wav2vec2-large is about 10 minutes per epoch
+against base's 4.5.
+
 ## Limitations
 
 - **Three seeds, which is enough to see a spread and not enough to estimate one.** The
