@@ -139,27 +139,32 @@ def compare(nrm, dec):
 def loo_section(loo):
     if not loo:
         return "  (not run)"
-    L = ["| grouping | item | observed dTVD | min over deletions | max | "
-         "largest single-rater move | jackknife SE |", "|---|---|---|---|---|---|---|"]
+    L = ["| grouping | item | observed dTVD | 95% CI (jackknife) | min over deletions "
+         "| max | largest single-rater move |",
+         "|---|---|---|---|---|---|---|"]
     ex = True
     n = 0
     for g, gr in loo["by_group"].items():
         for e, l in gr.get("leave_one_rater_out", {}).items():
             ex &= l["exhaustive"]
             n = l["n_deletions"]
-            L.append(f"| {GROUP.get(g, g)} | {e} | {l['observed_dtvd']:.4f} "
+            se = l["jackknife_se"]
+            ci = (f"{l['observed_dtvd'] - 1.96 * se:.4f} – "
+                  f"{l['observed_dtvd'] + 1.96 * se:.4f}") if se else "—"
+            L.append(f"| {GROUP.get(g, g)} | {e} | {l['observed_dtvd']:.4f} | {ci} "
                      f"| {l['loo_min']:.4f} | {l['loo_max']:.4f} "
-                     f"| {l['max_abs_change']:.5f} "
-                     f"| {l['jackknife_se']:.5f} |" if l["jackknife_se"] is not None
-                     else f"| {GROUP.get(g, g)} | {e} | {l['observed_dtvd']:.4f} "
-                          f"| {l['loo_min']:.4f} | {l['loo_max']:.4f} "
-                          f"| {l['max_abs_change']:.5f} | — |")
+                     f"| {l['max_abs_change']:.5f} |")
     head = (f"Every one of the **{n:,}** raters deleted in turn, the whole analysis "
             f"refit each time (baseline plus six single-item models, "
             f"{n * 7:,} model fits per grouping)."
             if ex else
             f"**{n:,} raters deleted** — a random subsample, not exhaustive.")
-    return head + "\n\n" + "\n".join(L)
+    tail = ("\n\nThe CI is the delete-one jackknife, ±1.96 SE. dTVD contains an "
+            "absolute value, so it is not everywhere smooth and the jackknife is "
+            "approximate near dTVD ≈ 0; read it as a scale, not an exact interval. "
+            "It is an interval on dTVD itself, not on dTVD net of its permutation "
+            "null.")
+    return head + "\n\n" + "\n".join(L) + tail
 
 
 def mirt_section():
