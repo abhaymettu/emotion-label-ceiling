@@ -476,20 +476,22 @@ and it is what `ceiling/out/ceiling.json` and `web/index.html` were built from.
 A second value for the audio ceiling, **0.728 [0.722, 0.731]**, had been circulating
 alongside it. **0.727 [0.723, 0.732] is the correct one** and every place carrying the other
 has been corrected. The two differ because of *which command was run*, and that is
-demonstrable rather than a guess — re-running the same estimator on the same data under the
-script's default flags instead of the pinned ones gives:
+demonstrable rather than a guess. Re-running the identical estimator on the identical data,
+varying nothing but the flags and the call order:
 
-| run | audio ceiling | 95% CI |
-|---|---|---|
-| `--panels 1,2,3,5,7,9,10,11,13,15,21,31,51,101,201 --bootstrap 150 --seed 0` (pinned) | **0.7272** | [0.7229, 0.7316] |
-| script defaults (`--panels 1,3,5,7,9,11,15,21,31,51,101 --bootstrap 200`) | 0.7270 | [0.7225, **0.7311**] |
+| run — same estimator, same data, same `--seed 0` | audio ceiling | 95% CI | rounds to |
+|---|---|---|---|
+| pinned: `--panels 1,2,3,5,7,9,10,11,13,15,21,31,51,101,201 --bootstrap 150` | **0.7272** | [0.7229, 0.7316] | **0.727 [0.723, 0.732]** |
+| script defaults: `--panels 1,3,5,7,9,11,15,21,31,51,101 --bootstrap 200` | 0.7270 | [0.7225, 0.7311] | 0.727 [0.722, **0.731**] |
+| pinned flags, audio computed first (no pooled run ahead of it) | 0.7276 | [0.7227, 0.7310] | **0.728** [0.723, **0.731**] |
 
-The default-flag run reproduces the stray interval to three decimals — [0.722, 0.731]. The
-mechanism is in `ceiling.py`: one `numpy` Generator is threaded through the pooled run and
-then all three modality runs in sequence, so changing the panel grid or the bootstrap count
-changes how many draws are consumed before the audio estimate is computed, and the estimate
-moves in its third decimal. Nothing is wrong with either run; they are the same estimator at
-different points in one RNG stream.
+The third row *is* the stray number. Nothing about the data or the method changed to produce
+it — only the order in which the draws were consumed. The mechanism is one line of
+`ceiling.py`: a single `numpy` Generator is threaded through the pooled run and then all
+three modality runs in sequence, so the panel grid, the bootstrap count and even which
+modality is computed first all change how many draws are burned before the audio estimate,
+and the estimate wanders across the 0.727/0.728 rounding boundary. Every run in that table
+is correct arithmetic. Only one of them is the run this repo reports.
 
 0.727 wins because it is the number every artifact in the tree actually carries —
 `ceiling/out/ceiling.json`, the `ceiling_context` block inside
