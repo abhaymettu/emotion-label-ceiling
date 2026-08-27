@@ -1,6 +1,11 @@
-"""Differential item functioning across annotators.
+"""Differential item functioning across annotators, dichotomous (correct/incorrect).
 
-Rationale and model justification: invariance/METHOD.md.
+Rationale and model justification: invariance/METHOD.md. Results and honest limits:
+invariance/README.md.
+
+The nominal (which-wrong-answer) question is answered by a fitted Bock nominal
+response model in invariance/nrm.py. `nominal_shift` below is the matched-decile
+approximation to it, kept for comparison and labelled as such.
 
   .venv/bin/python invariance/dif.py           # real data if present, else fixture
   .venv/bin/python invariance/dif.py --check   # known-answer self-check
@@ -80,6 +85,32 @@ def add_groups(df: pd.DataFrame, rng: np.random.Generator) -> pd.DataFrame:
 
     df["_style_holdout"] = ~half        # test DIF on the trials PCA did not see
     return df
+
+
+def loo_consensus(df: pd.DataFrame, rng: np.random.Generator) -> pd.Series:
+    """Leave-one-rater-out crowd consensus label for each rating row.
+
+    The clip's majority response computed from every rater EXCEPT the one whose row
+    it is, within the same presented modality. Ties broken uniformly at random.
+
+    Why it exists: keying DIF on the ordinary crowd consensus is circular, because the
+    rater under test helped build the label they are scored against. Dropping their own
+    vote removes that particular circularity (it does not remove the fact that the
+    remaining ~9 raters are drawn from the same pool).
+    """
+    key = list(zip(df.presented_modality.astype(str), df.clip_id.astype(str)))
+    kk = pd.Index(pd.unique(pd.Series(key)))
+    ki = pd.Series(np.arange(len(kk)), index=kk).loc[key].to_numpy()
+    ri = df.response_emotion.map(E_IDX).to_numpy()
+    tot = np.zeros((len(kk), K), np.int64)
+    np.add.at(tot, (ki, ri), 1)
+    own = tot[ki].copy()
+    own[np.arange(len(ri)), ri] -= 1                 # drop this rater's own vote
+    mx = own.max(axis=1, keepdims=True)
+    pick = (rng.random(own.shape) * (own == mx)).argmax(axis=1)
+    out = pd.Series(np.array(EMOTIONS)[pick], index=df.index)
+    out[own.sum(axis=1) == 0] = pd.NA                # nobody else rated the clip
+    return out
 
 
 def rest_scores(df: pd.DataFrame) -> pd.Series:
@@ -171,11 +202,26 @@ def mantel_haenszel(sub: pd.DataFrame, group_col: str, bins: int = 10) -> dict |
 
 
 def nominal_shift(sub: pd.DataFrame, group_col: str) -> dict | None:
-    """Which wrong answer, not just whether wrong.
+    """APPROXIMATION to a nominal response model. Not a fitted NRM.
 
-    Dichotomised DIF cannot see 'group A hears fear as sadness while group B hears
-    it as fear'. This is the Bock-style nominal view: the full response
-    distribution for the item, by group, matched by ability decile.
+    Which wrong answer, not just whether wrong: dichotomised DIF cannot see 'group A
+    hears fear as sadness while group B hears it as fear'. This gets at that by
+    stratifying on observed rest score in deciles and averaging the by-group response
+    distribution over strata.
+
+    It is an approximation in three specific ways, all of which the fitted model in
+    invariance/nrm.py avoids:
+
+      1. It matches on the *observed* rest score, which is a noisy proxy for latent
+         ability, so matching is imperfect and the effect is attenuated.
+      2. Ten strata is a coarse discretisation of a continuous trait.
+      3. It has no null. Ten-decile crosstabs of six categories on finite cells always
+         return a nonzero total-variation distance, so the number has no zero point
+         and cannot be tested.
+
+    Kept, and reported next to the NRM result, because a reader should be able to see
+    whether the cheap approximation and the fitted model agree. Column name in the CSV
+    is `decile_tvd_approx` for exactly that reason.
     """
     lv = sorted(sub[group_col].dropna().unique())
     if len(lv) != 2:
@@ -207,11 +253,18 @@ def nominal_shift(sub: pd.DataFrame, group_col: str) -> dict | None:
 
 # -------------------------------------------------------------------- driver
 
-def run(df: pd.DataFrame, meta: dict, rng) -> dict:
+def run(df: pd.DataFrame, meta: dict, rng, key: str = "intent") -> dict:
     df = add_groups(df, rng)
+    if key == "consensus_loo":
+        df["intended_emotion"] = loo_consensus(df, rng)
+        df = df[df.intended_emotion.notna()].copy()
+        df["correct"] = (df.response_emotion.astype(str)
+                         == df.intended_emotion.astype(str)).astype(int)
     df["rest"] = rest_scores(df)
     groups = [c for c in df.columns if c.startswith("grp_")]
-    res = {**meta, "keyed_response": "intended_emotion",
+    res = {**meta, "keyed_response": {"intent": "intended_emotion",
+                                      "consensus_loo": "leave-one-rater-out crowd "
+                                                       "majority"}[key],
            "style_pc1_ability_correlation": df.attrs.get("style_ability_corr"),
            "matching_variable": "rest score over the other five items",
            "grouping_variables": groups, "items": {}}
@@ -241,7 +294,7 @@ def run(df: pd.DataFrame, meta: dict, rng) -> dict:
                 "acc_diff": round(r["raw_accuracy"]["diff"], 4),
                 "mh_delta": round(r["mh"]["delta_mh"], 3) if r["mh"] else None,
                 "mh_ets": r["mh"]["ets"] if r["mh"] else None,
-                "nominal_tvd": round(r["nominal"]["total_variation_distance"], 4)
+                "decile_tvd_approx": round(r["nominal"]["total_variation_distance"], 4)
                 if r["nominal"] else None,
                 "largest_response_shift": r["nominal"]["largest_shift_response"]
                 if r["nominal"] else None,
@@ -305,6 +358,23 @@ def self_check() -> int:
     d2 = df[df.intended_emotion == "fear"]
     assert d2.rest.corr(d2.correct) < 0.6, "rest score looks contaminated by its own item"
 
+    # leave-one-rater-out consensus must exclude the rater's own vote
+    d3 = pd.DataFrame({
+        "clip_id": ["c0"] * 4 + ["c1"] * 2,
+        "presented_modality": ["audio"] * 4 + ["visual"] * 2,
+        "response_emotion": ["fear", "fear", "fear", "sad", "happy", "happy"],
+    })
+    lc = loo_consensus(d3, np.random.default_rng(0))
+    # the lone 'sad' rater must not see their own vote; the 'fear' raters see 2 of 3
+    assert list(lc[:4]) == ["fear"] * 4, list(lc[:4])
+    assert list(lc[4:]) == ["happy", "happy"], list(lc[4:])
+    # a rater whose own vote is in the tied majority must see the tie broken without it
+    d5 = pd.DataFrame({"clip_id": ["c0"] * 4, "presented_modality": ["audio"] * 4,
+                       "response_emotion": ["fear", "fear", "sad", "sad"]})
+    assert list(loo_consensus(d5, np.random.default_rng(0))) == \
+        ["sad", "sad", "fear", "fear"], "own vote is leaking into the consensus"
+    assert loo_consensus(d5.iloc[[0]], np.random.default_rng(0)).isna().all(), \
+        "single-rater clip must yield no leave-one-out consensus"
     print("ok  planted DIF recovered (dR2="
           f"{fear['delta_r2_nagelkerke']:.3f}, MH {mh['ets']}), "
           f"no false positives (max clean dR2={worst:.4f})")
@@ -316,6 +386,9 @@ def main() -> int:
     ap.add_argument("--ratings", default=None)
     ap.add_argument("--modality", default=None, help="audio | visual | audiovisual")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--key", default="intent", choices=["intent", "consensus_loo"],
+                    help="score correctness against the actor's intent (default) or "
+                         "against the leave-one-rater-out crowd majority")
     ap.add_argument("--check", action="store_true")
     a = ap.parse_args()
     if a.check:
@@ -327,9 +400,10 @@ def main() -> int:
         df = df[df.presented_modality == a.modality]
         meta = {**meta, "modality_filter": a.modality, "n_ratings": int(len(df))}
 
-    res, tab = run(df, meta, rng)
+    res, tab = run(df, meta, rng, key=a.key)
     OUT.mkdir(parents=True, exist_ok=True)
     suffix = f"-{a.modality}" if a.modality else ""
+    suffix += "-consensusloo" if a.key == "consensus_loo" else ""
     tab.to_csv(OUT / f"dif{suffix}.csv", index=False)
     (OUT / f"dif{suffix}.json").write_text(json.dumps(res, indent=2))
 
@@ -337,10 +411,11 @@ def main() -> int:
     print(f"\nsource: {res['source_file']}{tag}   "
           f"modality={a.modality or 'all pooled'}   n={res['n_ratings']:,} trials, "
           f"{res['n_raters']:,} raters")
-    print("keyed on intended emotion; matched on rest score over the other five items\n")
+    print(f"keyed on {res['keyed_response']}; "
+          "matched on rest score over the other five items\n")
     show = ["group_var", "item", "n_trials", "delta_r2", "jodoin_gierl",
             "beta_uniform", "z_uniform", "p_nonuniform", "acc_diff",
-            "mh_ets", "nominal_tvd", "largest_response_shift"]
+            "mh_ets", "decile_tvd_approx", "largest_response_shift"]
     print(tab[show].to_string(index=False))
     print("\nleast invariant items (mean dR2 across grouping variables):")
     for r in res["least_invariant_items"]:
