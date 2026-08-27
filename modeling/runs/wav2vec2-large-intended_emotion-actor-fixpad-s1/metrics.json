@@ -1,0 +1,94 @@
+{
+  "tag": "wav2vec2-large-intended_emotion-actor-fixpad-s1",
+  "n_test_clips": 1639,
+  "n_test_actors": 20,
+  "n_seeds": 1,
+  "seed": 1,
+  "split": "actor",
+  "trained_against": "intended_emotion",
+  "pad": "fixed",
+  "best_val_acc": 0.6984478935698448,
+  "test_acc_vs_intended": 0.7321537522879805,
+  "test_acc_vs_audio_consensus": 0.4838316046369738,
+  "per_class_vs_intended": {
+    "anger": {
+      "n": 280,
+      "recall": 0.975,
+      "precision": 0.6911392405063291
+    },
+    "disgust": {
+      "n": 280,
+      "recall": 0.6357142857142857,
+      "precision": 0.7841409691629956
+    },
+    "fear": {
+      "n": 280,
+      "recall": 0.65,
+      "precision": 0.7338709677419355
+    },
+    "happy": {
+      "n": 280,
+      "recall": 0.7214285714285714,
+      "precision": 0.8451882845188284
+    },
+    "neutral": {
+      "n": 239,
+      "recall": 0.8702928870292888,
+      "precision": 0.697986577181208
+    },
+    "sad": {
+      "n": 280,
+      "recall": 0.5607142857142857,
+      "precision": 0.6767241379310345
+    }
+  },
+  "per_class_vs_audio_consensus": {
+    "anger": {
+      "n": 257,
+      "recall": 0.8521400778210116,
+      "precision": 0.5544303797468354
+    },
+    "disgust": {
+      "n": 162,
+      "recall": 0.5308641975308642,
+      "precision": 0.3788546255506608
+    },
+    "fear": {
+      "n": 174,
+      "recall": 0.5287356321839081,
+      "precision": 0.3709677419354839
+    },
+    "happy": {
+      "n": 88,
+      "recall": 0.875,
+      "precision": 0.32217573221757323
+    },
+    "neutral": {
+      "n": 855,
+      "recall": 0.32514619883040935,
+      "precision": 0.9328859060402684
+    },
+    "sad": {
+      "n": 103,
+      "recall": 0.39805825242718446,
+      "precision": 0.17672413793103448
+    }
+  },
+  "ceiling_context": {
+    "audio_ceiling_panel10": {
+      "panel_size": 10,
+      "estimate": 0.7271866881662635,
+      "ci95": [
+        0.7228821553345873,
+        0.7315811833736451
+      ],
+      "n_bootstrap": 150,
+      "n_clips": 7442
+    },
+    "crowd_consensus_vs_intended": 0.4398011287288363,
+    "krippendorff_alpha_audio": 0.2654800615777072
+  },
+  "caveat": "single run, single seed. one run is not a result; re-run with --seed 1,2 before reporting a spread.",
+  "finished": "2026-08-27T15:17:09",
+  "headroom_to_audio_ceiling": 0.24335508352928975
+}
