@@ -5,7 +5,9 @@ Do the six emotion labels mean the same thing to every CREMA-D rater?
 **Not quite, and the amount depends on which emotion.** Under a fitted Bock nominal
 response model on the audio-only condition (n = 73,253 trials, 2,443 raters, 7,442
 clips), differential item functioning across behavioural rater groups is **small but
-real**, and it is largest for `neutral` and `anger`. The biggest single effect is
+real**, and it is largest for `neutral` and `anger` — though only `anger` keeps that
+position when the items are keyed on the crowd consensus instead of the actor's
+direction (see the robustness section; the rest of the ranking is key-dependent). The biggest single effect is
 `neutral` under a latent construal split: **10.3% of response mass moves between groups
 at equal ability** (dTVD 0.1027, 95% CI 0.055–0.150, permutation null 0.0284,
 p ≤ 0.005). All five rater groupings beat their permutation null on at least one
@@ -477,6 +479,28 @@ Source `data/ratings_long.parquet`, audio only: **n = 73,253 trials, 2,443 rater
 Least invariant items, mean dTVD over the groupings: **sad** 0.0679, **happy** 0.0628, **anger** 0.0509, **fear** 0.0471, **disgust** 0.0401, **neutral** 0.0286.
 
 Same ranking **net of each item's own permutation null**, which is the one to read because dTVD's floor scales with that item's n: **sad** +0.0284, **anger** +0.0240, **happy** +0.0204, **neutral** +0.0138, **fear** +0.0136, **disgust** +0.0043.
+
+### What survives the key change, and what does not
+
+**Survives.** The strongest individual results replicate almost exactly. Response speed ×
+*anger* goes from excess +0.040 to **+0.046**; session position × *anger* from +0.034 to
+**+0.045**; both keep p(perm) = 0.005. `anger` is the second least invariant category
+under both keys. And the shape of the finding is the same: specific cells, not a
+pervasive effect, with several cells below their null (disgust under the residualised
+construal split, −0.022, p = 0.98).
+
+**Does not survive.** The *ranking* of least invariant categories moves a lot. Under the
+actor's intent it is neutral > anger > fear; under the crowd consensus it is sad > anger
+> happy, with neutral fourth. That is not a contradiction — the two keys define different
+sets of trials. "Item = sad" under the intent key means *clips an actor was directed to
+perform as sad* (12,474 trials); under the consensus key it means *clips the crowd
+actually called sad* (2,323 trials), a much smaller and more extreme subset, since
+audio-only raters route most sad clips to `neutral`. The honest reading is:
+
+> **`anger` is least invariant under either definition of the items. The rest of the
+> ranking is key-dependent and should not be quoted without saying which key.** The
+> headline ranking above is the intent-keyed one, and it is not robust to keying on the
+> crowd.
 
 ## Assumptions
 
