@@ -71,35 +71,60 @@ if a.run:
 pool = clips[clips.n_ratings_audio >= 9].copy()
 pool["diverged"] = pool.consensus_audio != pool.intended_emotion
 
+# One clip per emotion where the crowd's majority matched the actor's script, one where it
+# did not. Inside the half where they disagreed, the model's allegiance (script / room /
+# neither) is sampled in the same proportion it holds over the whole test split, and the
+# model's hit rate over all 12 is matched to its hit rate over the whole test split. Without
+# that the page is a highlight reel: picking on interestingness alone oversamples exactly the
+# clips that flatter the claim.
+n_half = a.n // 2
 if preds:
-    pool["model_right"] = pool.clip_id.map(preds) == pool.intended_emotion
-    # keep the sample's model hit rate near the real one so the page is not a highlight reel
-    n_wrong = int(round(a.n * (1 - finding["acc_intended"])))
+    pool["model"] = pool.clip_id.map(preds)
+    d = finding["n_diverged"]
+    n_script = round(n_half * finding["n_model_script"] / d)
+    n_room = round(n_half * finding["n_model_crowd"] / d)
+    alleg = ["script"] * n_script + ["room"] * n_room
+    alleg += ["neither"] * (n_half - len(alleg))
+    n_agreed_wrong = max(0, round(a.n * (1 - finding["acc_intended"])) - n_room
+                         - (n_half - n_script - n_room))
 else:
-    pool["model_right"] = True
-    n_wrong = 0
+    pool["model"] = pool.intended_emotion
+    alleg, n_agreed_wrong = ["script"] * n_half, 0
 
-# one contested clip and one the crowd mostly agreed on, per emotion
-slots = [(e, d) for e in EMOTIONS for d in (True, False)][:a.n]
-have_wrong = [i for i, (e, d) in enumerate(slots)
-              if len(pool[(pool.intended_emotion == e) & (pool.diverged == d) & ~pool.model_right])]
+def side(g):
+    """model's allegiance on clips where the room and the script disagree"""
+    return np.where(g.model == g.intended_emotion, "script",
+                    np.where(g.model == g.consensus_audio, "room", "neither"))
+
 rng = np.random.default_rng(a.seed)
-wrong_slots = set(rng.choice(have_wrong, size=min(n_wrong, len(have_wrong)), replace=False).tolist())
+# hand the scarce allegiances to emotions that can actually supply them
+div = pool[pool.diverged].assign(side=lambda g: side(g))
+supply = {e: set(div[div.intended_emotion == e].side) for e in EMOTIONS}
+want = sorted(alleg, key=lambda s: sum(s in v for v in supply.values()))
+free, plan = list(EMOTIONS), {}
+for s in want:
+    ok = [e for e in free if s in supply[e]]
+    assert ok, f"no held-out emotion can supply a '{s}' clip"
+    e = ok[int(rng.integers(len(ok)))]
+    plan[e] = s
+    free.remove(e)
+agreed_wrong = set(rng.choice(EMOTIONS, size=n_agreed_wrong, replace=False).tolist())
 
 picks, used = [], set()
-for i, (e, d) in enumerate(slots):
-    g = pool[(pool.intended_emotion == e) & (pool.diverged == d)]
-    g = g[~g.model_right] if i in wrong_slots else g[g.model_right]
-    if not len(g):
-        continue
-    # span the agreement range: contested slots aim low, agreed slots aim high
-    target = g.agreement_audio.quantile(0.25 if d else 0.9)
-    g = g.assign(_d=(g.agreement_audio - target).abs())
-    # among the clips that hit the target, prefer an actor not already on the page
-    g = g[g._d <= g._d.min() + 0.05]
-    g = g.assign(_seen=g.actor_id.isin(used)).sort_values(["_seen", "_d", "clip_id"])
-    used.add(g.iloc[0].actor_id)
-    picks.append(g.iloc[0])
+for e in EMOTIONS:
+    for diverged in (True, False):
+        g = pool[(pool.intended_emotion == e) & (pool.diverged == diverged)]
+        g = g[side(g) == plan[e]] if diverged else \
+            g[(g.model == e) != (e in agreed_wrong)]
+        assert len(g), f"no candidate for {e}, diverged={diverged}"
+        # span the agreement range: contested slots aim low, agreed slots aim high
+        target = g.agreement_audio.quantile(0.25 if diverged else 0.9)
+        g = g.assign(_d=(g.agreement_audio - target).abs())
+        # among the clips that hit the target, prefer an actor not already on the page
+        g = g[g._d <= g._d.min() + 0.05]
+        g = g.assign(_seen=g.actor_id.isin(used)).sort_values(["_seen", "_d", "clip_id"])
+        used.add(g.iloc[0].actor_id)
+        picks.append(g.iloc[0])
 picks = pd.DataFrame(picks).drop_duplicates("clip_id")
 assert len(picks) == a.n, f"picked {len(picks)} clips, wanted {a.n}"
 
